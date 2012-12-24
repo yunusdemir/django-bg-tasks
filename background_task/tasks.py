@@ -6,6 +6,7 @@ import sys
 from datetime import datetime, timedelta
 from django.db import transaction
 from django.utils.importlib import import_module
+from django.utils.timezone import utc
 
 
 class Tasks(object):
@@ -19,14 +20,14 @@ class Tasks(object):
         something that gets run asynchronously in
         the background, at a later time
         '''
-        
+
         # see if used as simple decorator
         # where first arg is the function to be decorated
         fn = None
         if name and callable(name):
             fn = name
             name = None
-        
+
         def _decorator(fn):
             _name = name
             if not _name:
@@ -34,7 +35,7 @@ class Tasks(object):
             proxy = TaskProxy(_name, fn, schedule, self._runner)
             self._tasks[_name] = proxy
             return proxy
-        
+
         if fn:
             return _decorator(fn)
 
@@ -87,7 +88,7 @@ class TaskSchedule(object):
 
     @property
     def run_at(self):
-        run_at = self._run_at or datetime.now()
+        run_at = self._run_at or datetime.utcnow().replace(tzinfo=utc)
         if isinstance(run_at, int):
             run_at = datetime.now() + timedelta(seconds=run_at)
         if isinstance(run_at, timedelta):
@@ -130,7 +131,8 @@ class DBTaskRunner(object):
 
         if action != TaskSchedule.SCHEDULE:
             task_hash = task.task_hash
-            unlocked = Task.objects.unlocked(datetime.now())
+            now = datetime.utcnow().replace(tzinfo=utc)
+            unlocked = Task.objects.unlocked(now)
             existing = unlocked.filter(task_hash=task_hash)
             if action == TaskSchedule.RESCHEDULE_EXISTING:
                 updated = existing.update(run_at=run_at, priority=priority)
