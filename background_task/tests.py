@@ -66,7 +66,7 @@ class TestBackgroundDecorator(unittest.TestCase):
         proxy = tasks.background()(empty_task)
         self.assertEqual(u'TaskProxy(background_task.tests.empty_task)',
                              unicode(proxy))
-    
+
     def test_shortcut(self):
         '''check shortcut to decorator works'''
         proxy = background()(empty_task)

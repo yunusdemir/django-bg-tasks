@@ -44,6 +44,16 @@ class TaskManager(models.Manager):
                     priority=priority,
                     run_at=run_at)
 
+    def get_task(self, task_name, args=None, kwargs=None):
+        args = args or ()
+        kwargs = kwargs or {}
+        task_params = simplejson.dumps((args, kwargs))
+        task_hash = sha1(task_name + task_params).hexdigest()
+        qs = self.get_query_set()
+        return qs.filter(task_hash=task_hash)
+
+    def drop_task(self, task_name, args=None, kwargs=None):
+        return self.get_task(task_name, args, kwargs).delete()
 
 class Task(models.Model):
     # the "name" of the task/function to be run
