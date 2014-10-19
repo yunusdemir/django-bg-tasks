@@ -1,4 +1,4 @@
-from models import Task, datetime_now
+from .models import Task, datetime_now
 
 import os
 import logging
