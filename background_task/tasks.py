@@ -19,14 +19,14 @@ class Tasks(object):
         something that gets run asynchronously in
         the background, at a later time
         '''
-        
+
         # see if used as simple decorator
         # where first arg is the function to be decorated
         fn = None
         if name and callable(name):
             fn = name
             name = None
-        
+
         def _decorator(fn):
             _name = name
             if not _name:
@@ -34,7 +34,7 @@ class Tasks(object):
             proxy = TaskProxy(_name, fn, schedule, self._runner)
             self._tasks[_name] = proxy
             return proxy
-        
+
         if fn:
             return _decorator(fn)
 
@@ -142,7 +142,6 @@ class DBTaskRunner(object):
 
         task.save()
 
-    @transaction.autocommit
     def get_task_to_run(self):
         tasks = Task.objects.find_available()[:5]
         for task in tasks:
@@ -152,7 +151,6 @@ class DBTaskRunner(object):
                 return locked_task
         return None
 
-    @transaction.autocommit
     def run_task(self, tasks, task):
         try:
             logging.info('Running %s', task)
