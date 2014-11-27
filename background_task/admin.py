@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from models import Task
+from .models import Task
 
 class TaskAdmin(admin.ModelAdmin):
     display_filter = ['task_name']
