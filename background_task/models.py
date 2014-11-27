@@ -38,7 +38,7 @@ class TaskManager(models.Manager):
 
     def unlocked(self, now):
         max_run_time = getattr(settings, 'MAX_RUN_TIME', 3600)
-        qs = self.get_query_set()
+        qs = self.get_queryset()
         expires_at = now - timedelta(seconds=max_run_time)
         unlocked = Q(locked_by=None) | Q(locked_at__lt=expires_at)
         return qs.filter(unlocked)
