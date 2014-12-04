@@ -1,4 +1,4 @@
-from models import Task, datetime_now
+from models import Task, datetime_now, CompletedTask
 
 import os
 import logging
@@ -159,6 +159,17 @@ class DBTaskRunner(object):
             args, kwargs = task.params()
             tasks.run_task(task.task_name, args, kwargs)
             # task done, so can delete it
+            completed = CompletedTask(task_name=task.task_name,
+                                      task_params=task.task_params,
+                                      task_hash=task.task_hash,
+                                      priority=task.priority,
+                                      run_at=datetime_now(),
+                                      attempts=task.attempts,
+                                      failed_at=task.failed_at,
+                                      last_error=task.last_error,
+                                      locked_by=task.locked_by,
+                                      locked_at=task.locked_at)
+            completed.save()
             task.delete()
             logging.info('Ran task and deleting %s', task)
         except Exception:

@@ -7,6 +7,8 @@ from hashlib import sha1
 import traceback
 from StringIO import StringIO
 import logging
+from models_completed import CompletedTask
+
 
 try:
     import json  # Django >= 1.6
