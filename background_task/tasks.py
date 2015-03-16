@@ -3,6 +3,8 @@ from django.utils.encoding import python_2_unicode_compatible
 
 from .models import Task, datetime_now
 
+
+import django
 import os
 import logging
 import sys
@@ -10,6 +12,16 @@ from datetime import datetime, timedelta
 from django.db import transaction
 from django.utils.importlib import import_module
 
+def __null_decorator(function):
+    def wrapper(*args, **kwargs):
+        return function(*args, **kwargs)
+    return wrapper
+
+if float(django.get_version()) < 1.6:
+    compatibility_autocommit = transaction.autocommit
+else:
+    # Autocommit is deprecated and the default
+    compatibility_autocommit = __null_decorator
 
 class Tasks(object):
     def __init__(self):
@@ -145,6 +157,7 @@ class DBTaskRunner(object):
 
         task.save()
 
+    @compatibility_autocommit
     def get_task_to_run(self):
         tasks = Task.objects.find_available()[:5]
         for task in tasks:
@@ -154,6 +167,7 @@ class DBTaskRunner(object):
                 return locked_task
         return None
 
+    @compatibility_autocommit
     def run_task(self, tasks, task):
         try:
             logging.info('Running %s', task)
