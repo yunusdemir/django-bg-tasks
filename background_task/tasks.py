@@ -1,3 +1,6 @@
+from __future__ import unicode_literals
+from django.utils.encoding import python_2_unicode_compatible
+
 from .models import Task, datetime_now
 
 import os
@@ -177,7 +180,7 @@ class DBTaskRunner(object):
         else:
             return False
 
-
+@python_2_unicode_compatible
 class TaskProxy(object):
     def __init__(self, name, task_function, schedule, runner):
         self.name = name
@@ -193,8 +196,8 @@ class TaskProxy(object):
         action = schedule.action
         self.runner.schedule(self.name, args, kwargs, run_at, priority, action)
 
-    def __unicode__(self):
-        return u'TaskProxy(%s)' % self.name
+    def __str__(self):
+        return 'TaskProxy(%s)' % self.name
 
 tasks = Tasks()
 
