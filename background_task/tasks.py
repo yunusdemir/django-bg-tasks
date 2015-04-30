@@ -11,13 +11,14 @@ import sys
 from datetime import datetime, timedelta
 from django.db import transaction
 from django.utils.importlib import import_module
+from distutils.version import LooseVersion
 
 def __null_decorator(function):
     def wrapper(*args, **kwargs):
         return function(*args, **kwargs)
     return wrapper
 
-if float(django.get_version()) < 1.6:
+if LooseVersion(django.get_version()) <= LooseVersion("1.6"):
     compatibility_autocommit = transaction.autocommit
 else:
     # Autocommit is deprecated and the default
