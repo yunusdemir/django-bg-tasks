@@ -3,13 +3,13 @@ from setuptools import setup, find_packages
 version = __import__('background_task').__version__
 
 setup(
-    name='django-background-task',
+    name='django-background-tasks',
     version=version,
     description='Database backed asynchronous task queue',
     long_description=open('README.rst').read(),
-    author='John Montgomery',
-    author_email='john@littlespikeyland.com',
-    url='http://github.com/lilspikey/django-background-task',
+    author='arteria GmbH, John Montgomery',
+    author_email='admin@arteria.ch',
+    url='http://github.com/arteria/django-background-tasks',
     license='BSD',
     packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,
