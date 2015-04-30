@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Q
 from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible
+import django
 
 from datetime import timedelta
 from hashlib import sha1
@@ -11,6 +12,7 @@ try:  # Python 2
 except ImportError:
     from io import StringIO
 import logging
+from distutils.version import LooseVersion
 
 try:
     import json  # Django >= 1.6
@@ -38,7 +40,10 @@ class TaskManager(models.Manager):
 
     def unlocked(self, now):
         max_run_time = getattr(settings, 'MAX_RUN_TIME', 3600)
-        qs = self.get_queryset()
+        if LooseVersion(django.get_version()) > LooseVersion("1.6"):
+            qs = self.get_queryset()
+        else:
+            qs = self.get_query_set()
         expires_at = now - timedelta(seconds=max_run_time)
         unlocked = Q(locked_by=None) | Q(locked_at__lt=expires_at)
         return qs.filter(unlocked)
