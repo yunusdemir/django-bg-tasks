@@ -25,7 +25,7 @@ class TestBackgroundDecorator(unittest.TestCase):
         proxy = tasks.background()(empty_task)
         self.assertNotEqual(proxy, empty_task)
         self.assertTrue(isinstance(proxy, TaskProxy))
-        
+
         # and alternate form
         proxy = tasks.background(empty_task)
         self.assertNotEqual(proxy, empty_task)
@@ -33,15 +33,15 @@ class TestBackgroundDecorator(unittest.TestCase):
 
     def test_default_name(self):
         proxy = tasks.background()(empty_task)
-        self.assertEqual(proxy.name, 'background_task.tests.empty_task')
+        self.assertEqual(proxy.name, 'background_task.tests.task_tests.empty_task')
 
         proxy = tasks.background()(record_task)
-        self.assertEqual(proxy.name, 'background_task.tests.record_task')
-        
+        self.assertEqual(proxy.name, 'background_task.tests.task_tests.record_task')
+
         proxy = tasks.background(empty_task)
-        #print proxy
+        # print proxy
         self.assertTrue(isinstance(proxy, TaskProxy))
-        self.assertEqual(proxy.name, 'background_task.tests.empty_task')
+        self.assertEqual(proxy.name, 'background_task.tests.task_tests.empty_task')
 
     def test_specified_name(self):
         proxy = tasks.background(name='mytask')(empty_task)
@@ -64,9 +64,9 @@ class TestBackgroundDecorator(unittest.TestCase):
 
     def test__unicode__(self):
         proxy = tasks.background()(empty_task)
-        self.assertEqual(u'TaskProxy(background_task.tests.empty_task)',
+        self.assertEqual(u'TaskProxy(background_task.tests.task_tests.empty_task)',
                              unicode(proxy))
-    
+
     def test_shortcut(self):
         '''check shortcut to decorator works'''
         proxy = background()(empty_task)
@@ -175,7 +175,7 @@ class TestTaskSchedule(unittest.TestCase):
 
     def test_repr(self):
         self.assertEqual('TaskSchedule(run_at=10, priority=0)',
-                             repr(TaskSchedule(run_at=10, priority=0)))
+                            repr(TaskSchedule(run_at=10, priority=0)))
 
 
 class TestSchedulingTasks(TransactionTestCase):
