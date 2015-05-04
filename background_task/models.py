@@ -5,22 +5,18 @@ from django.conf import settings
 from datetime import timedelta
 from hashlib import sha1
 import traceback
-from StringIO import StringIO
 import logging
+
+from compat import StringIO
+
 from models_completed import CompletedTask
 
 
-try:
-    import json  # Django >= 1.6
-except ImportError:
-    from django.utils import simplejson as json  # Django <= 1.5
+import json
 
-try:
-    from django.utils import timezone
-    datetime_now = timezone.now
-except ImportError:
-    from datetime import datetime
-    datetime_now = datetime.now
+
+from django.utils import timezone
+datetime_now = timezone.now
 
 
 # inspired by http://github.com/tobi/delayed_job
