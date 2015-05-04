@@ -5,9 +5,6 @@ TEMPLATE_DEBUG = DEBUG
 DATABASE_ENGINE = 'sqlite3'
 DATABASE_NAME = ':memory:'
 
-SECRET_KEY = "secret"
-MIDDLEWARE_CLASSES = []
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.%s' % DATABASE_ENGINE,
@@ -27,3 +24,4 @@ if 'test_coverage' in sys.argv:
     COVERAGE_REPORT_HTML_OUTPUT_DIR = 'html_coverage'
     COVERAGE_MODULE_EXCLUDES = []
 
+SECRET_KEY = 'foo'

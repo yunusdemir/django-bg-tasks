@@ -4,6 +4,10 @@ from django.conf import settings
 
 from datetime import timedelta, datetime
 
+import sys
+if sys.version_info >= (3, 0):
+    unicode = str
+
 from background_task.tasks import tasks, TaskSchedule, TaskProxy
 from background_task.models import Task, datetime_now
 from background_task import background
@@ -25,7 +29,7 @@ class TestBackgroundDecorator(unittest.TestCase):
         proxy = tasks.background()(empty_task)
         self.assertNotEqual(proxy, empty_task)
         self.assertTrue(isinstance(proxy, TaskProxy))
-        
+
         # and alternate form
         proxy = tasks.background(empty_task)
         self.assertNotEqual(proxy, empty_task)
@@ -33,15 +37,15 @@ class TestBackgroundDecorator(unittest.TestCase):
 
     def test_default_name(self):
         proxy = tasks.background()(empty_task)
-        self.assertEqual(proxy.name, 'background_task.tests.empty_task')
+        self.assertEqual(proxy.name, 'background_task.tests.task_tests.empty_task')
 
         proxy = tasks.background()(record_task)
-        self.assertEqual(proxy.name, 'background_task.tests.record_task')
-        
+        self.assertEqual(proxy.name, 'background_task.tests.task_tests.record_task')
+
         proxy = tasks.background(empty_task)
-        #print proxy
+        # print proxy
         self.assertTrue(isinstance(proxy, TaskProxy))
-        self.assertEqual(proxy.name, 'background_task.tests.empty_task')
+        self.assertEqual(proxy.name, 'background_task.tests.task_tests.empty_task')
 
     def test_specified_name(self):
         proxy = tasks.background(name='mytask')(empty_task)
@@ -64,9 +68,9 @@ class TestBackgroundDecorator(unittest.TestCase):
 
     def test__unicode__(self):
         proxy = tasks.background()(empty_task)
-        self.assertEqual(u'TaskProxy(background_task.tests.empty_task)',
+        self.assertEqual(u'TaskProxy(background_task.tests.task_tests.empty_task)',
                              unicode(proxy))
-    
+
     def test_shortcut(self):
         '''check shortcut to decorator works'''
         proxy = background()(empty_task)
@@ -175,7 +179,7 @@ class TestTaskSchedule(unittest.TestCase):
 
     def test_repr(self):
         self.assertEqual('TaskSchedule(run_at=10, priority=0)',
-                             repr(TaskSchedule(run_at=10, priority=0)))
+                            repr(TaskSchedule(run_at=10, priority=0)))
 
 
 class TestSchedulingTasks(TransactionTestCase):
@@ -480,14 +484,14 @@ class TestTasks(TransactionTestCase):
         task = available[0]
 
         self.failUnless(task.failed_at is None)
-        
+
         task.attempts = settings.MAX_ATTEMPTS
         task.save()
-        
+
         # task should be scheduled to run now
         # but will be marked as failed straight away
         self.failUnless(tasks.run_next_task())
-        
+
         available = Task.objects.find_available()
         self.assertEqual(0, available.count())
 

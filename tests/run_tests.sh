@@ -1,3 +1,6 @@
 #!/bin/sh
-# run from parent directory (e.g. tests/run_tests.sh)
-django-admin.py test background_task --pythonpath=. --pythonpath=tests --settings=test_settings
+
+TESTS_DIR=$(dirname $0)
+export PYTHONPATH=$TESTS_DIR/..:$TESTS_DIR
+
+python `which django-admin.py` test background_task --settings=test_settings

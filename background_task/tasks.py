@@ -1,11 +1,18 @@
-from models import Task, datetime_now, CompletedTask
+from __future__ import unicode_literals
+from django.utils.encoding import python_2_unicode_compatible
 
+
+import django
 import os
 import logging
 import sys
 from datetime import datetime, timedelta
 from django.db import transaction
-from django.utils.importlib import import_module
+
+# monkey patch django: get_query_set + import_module
+from compat import import_module
+
+from .models import Task, datetime_now, CompletedTask
 
 
 class Tasks(object):
@@ -19,14 +26,14 @@ class Tasks(object):
         something that gets run asynchronously in
         the background, at a later time
         '''
-        
+
         # see if used as simple decorator
         # where first arg is the function to be decorated
         fn = None
         if name and callable(name):
             fn = name
             name = None
-        
+
         def _decorator(fn):
             _name = name
             if not _name:
@@ -34,7 +41,7 @@ class Tasks(object):
             proxy = TaskProxy(_name, fn, schedule, self._runner)
             self._tasks[_name] = proxy
             return proxy
-        
+
         if fn:
             return _decorator(fn)
 
@@ -142,7 +149,7 @@ class DBTaskRunner(object):
 
         task.save()
 
-    @transaction.autocommit
+    # @transaction.autocommit
     def get_task_to_run(self):
         tasks = Task.objects.find_available()[:5]
         for task in tasks:
@@ -152,7 +159,8 @@ class DBTaskRunner(object):
                 return locked_task
         return None
 
-    @transaction.autocommit
+
+    # @transaction.autocommit
     def run_task(self, tasks, task):
         try:
             logging.info('Running %s', task)
@@ -190,7 +198,7 @@ class DBTaskRunner(object):
         else:
             return False
 
-
+@python_2_unicode_compatible
 class TaskProxy(object):
     def __init__(self, name, task_function, schedule, runner):
         self.name = name
@@ -206,8 +214,8 @@ class TaskProxy(object):
         action = schedule.action
         self.runner.schedule(self.name, args, kwargs, run_at, priority, action)
 
-    def __unicode__(self):
-        return u'TaskProxy(%s)' % self.name
+    def __str__(self):
+        return 'TaskProxy(%s)' % self.name
 
 tasks = Tasks()
 
