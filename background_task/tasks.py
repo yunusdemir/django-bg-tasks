@@ -1,13 +1,19 @@
+from __future__ import unicode_literals
+from django.utils.encoding import python_2_unicode_compatible
+
+
+import django
 import os
 import logging
 import sys
 from datetime import datetime, timedelta
 from django.db import transaction
 
-# monkey patch django: get_query_set
+# monkey patch django: get_query_set + import_module
 from compat import import_module
 
 from .models import Task, datetime_now, CompletedTask
+
 
 class Tasks(object):
     def __init__(self):
@@ -153,6 +159,7 @@ class DBTaskRunner(object):
                 return locked_task
         return None
 
+
     # @transaction.autocommit
     def run_task(self, tasks, task):
         try:
@@ -191,7 +198,7 @@ class DBTaskRunner(object):
         else:
             return False
 
-
+@python_2_unicode_compatible
 class TaskProxy(object):
     def __init__(self, name, task_function, schedule, runner):
         self.name = name
@@ -207,8 +214,8 @@ class TaskProxy(object):
         action = schedule.action
         self.runner.schedule(self.name, args, kwargs, run_at, priority, action)
 
-    def __unicode__(self):
-        return u'TaskProxy(%s)' % self.name
+    def __str__(self):
+        return 'TaskProxy(%s)' % self.name
 
 tasks = Tasks()
 

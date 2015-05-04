@@ -1,6 +1,8 @@
 from django.db import models
 from django.db.models import Q
 from django.conf import settings
+from django.utils.encoding import python_2_unicode_compatible
+import django
 
 from datetime import timedelta
 from hashlib import sha1
@@ -45,7 +47,7 @@ class TaskManager(models.Manager):
             run_at = datetime_now()
 
         task_params = json.dumps((args, kwargs))
-        task_hash = sha1(task_name + task_params).hexdigest()
+        task_hash = sha1((task_name + task_params).encode()).hexdigest()
 
         return Task(task_name=task_name,
                     task_params=task_params,
@@ -53,7 +55,7 @@ class TaskManager(models.Manager):
                     priority=priority,
                     run_at=run_at)
 
-
+@python_2_unicode_compatible
 class Task(models.Model):
     # the "name" of the task/function to be run
     task_name = models.CharField(max_length=255, db_index=True)
@@ -94,12 +96,12 @@ class Task(models.Model):
         if updated:
             return Task.objects.get(pk=self.pk)
         return None
-    
+
     def _extract_error(self, type, err, tb):
         file = StringIO()
         traceback.print_exception(type, err, tb, None, file)
         return file.getvalue()
-    
+
     def reschedule(self, type, err, traceback):
         self.last_error = self._extract_error(type, err, traceback)
         max_attempts = getattr(settings, 'MAX_ATTEMPTS', 25)
@@ -119,13 +121,13 @@ class Task(models.Model):
         self.locked_at = None
 
         self.save()
-    
+
     def save(self, *arg, **kw):
         # force NULL rather than empty string
         self.locked_by = self.locked_by or None
         return super(Task, self).save(*arg, **kw)
 
-    def __unicode__(self):
+    def __str__(self):
         return u'Task(%s)' % self.task_name
 
     class Meta:

@@ -5,6 +5,9 @@ TEMPLATE_DEBUG = DEBUG
 DATABASE_ENGINE = 'sqlite3'
 DATABASE_NAME = ':memory:'
 
+SECRET_KEY = "secret"
+MIDDLEWARE_CLASSES = []
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.%s' % DATABASE_ENGINE,

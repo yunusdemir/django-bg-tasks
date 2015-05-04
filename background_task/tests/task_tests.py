@@ -4,6 +4,10 @@ from django.conf import settings
 
 from datetime import timedelta, datetime
 
+import sys
+if sys.version_info >= (3, 0):
+    unicode = str
+
 from background_task.tasks import tasks, TaskSchedule, TaskProxy
 from background_task.models import Task, datetime_now
 from background_task import background
@@ -480,14 +484,14 @@ class TestTasks(TransactionTestCase):
         task = available[0]
 
         self.failUnless(task.failed_at is None)
-        
+
         task.attempts = settings.MAX_ATTEMPTS
         task.save()
-        
+
         # task should be scheduled to run now
         # but will be marked as failed straight away
         self.failUnless(tasks.run_next_task())
-        
+
         available = Task.objects.find_available()
         self.assertEqual(0, available.count())
 
