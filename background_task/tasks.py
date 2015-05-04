@@ -1,5 +1,3 @@
-from models import Task, datetime_now, CompletedTask
-
 import os
 import logging
 import sys
@@ -9,6 +7,7 @@ from django.db import transaction
 # monkey patch django: get_query_set
 from compat import import_module
 
+from .models import Task, datetime_now, CompletedTask
 
 class Tasks(object):
     def __init__(self):
@@ -183,8 +182,6 @@ class DBTaskRunner(object):
     def run_next_task(self, tasks):
         # we need to commit to make sure
         # we can see new tasks as they arrive
-        print '----------'
-        print self.get_task_to_run
         task = self.get_task_to_run()
         transaction.commit()
         if task:

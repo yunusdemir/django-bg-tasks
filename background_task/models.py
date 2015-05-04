@@ -9,7 +9,7 @@ import logging
 
 from compat import StringIO
 
-from models_completed import CompletedTask
+from .models_completed import CompletedTask
 
 
 import json
