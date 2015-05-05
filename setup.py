@@ -2,6 +2,8 @@ from setuptools import setup, find_packages
 
 version = __import__('background_task').__version__
 
+classifiers = [c for c in open('classifiers').read().splitlines() if '#' not in c]
+
 setup(
     name='django-background-tasks',
     version=version,
@@ -15,14 +17,5 @@ setup(
     include_package_data=True,
     install_requires=open('requirements.txt').read().splitlines(),
     zip_safe=True,
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Environment :: Web Environment',
-        'Framework :: Django',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-    ],
+    classifiers=classifiers,
 )
