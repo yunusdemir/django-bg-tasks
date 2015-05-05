@@ -20,12 +20,12 @@ There are two parts to using background tasks:
 * setup a cron task (or long running process) to execute the tasks
 
 
-Supported versions & compatibility:
---  
-  - Python: 2 & 3
-  - Django: 1.4 - 1.8
+Supported versions and compatibility
+==============================  
+* Python: 2 & 3
+* Django: 1.4 - 1.8
 
-All critical imports are carried out with the compat_ library that gives the compatibility for Django_ 1.4 to 1.8
+Full Django LTS to LTS compatibility through django-compat_.
   
 Creating and registering tasks
 ==============================
@@ -97,3 +97,4 @@ This means that initially the task will be tried again a few seconds later.  Aft
 .. _supervisord: http://supervisord.org/
 .. _this: https://github.com/lilspikey/django-background-task
 .. _compat:  https://github.com/arteria/django-compat
+.. _django-compat:  https://github.com/arteria/django-compat
