@@ -4,7 +4,10 @@ from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible
 import django
 
-from datetime import timedelta
+
+from django.utils.timezone import utc
+from datetime import datetime, timedelta
+
 from hashlib import sha1
 import traceback
 import logging
@@ -27,7 +30,7 @@ datetime_now = timezone.now
 class TaskManager(models.Manager):
 
     def find_available(self):
-        now = datetime_now()
+        now = datetime.utcnow().replace(tzinfo=utc)
         qs = self.unlocked(now)
         ready = qs.filter(run_at__lte=now, failed_at=None)
         return ready.order_by('-priority', 'run_at')
@@ -44,7 +47,7 @@ class TaskManager(models.Manager):
         args = args or ()
         kwargs = kwargs or {}
         if run_at is None:
-            run_at = datetime_now()
+            run_at = datetime.utcnow().replace(tzinfo=utc)
 
         task_params = json.dumps((args, kwargs))
         task_hash = sha1((task_name + task_params).encode()).hexdigest()
@@ -54,6 +57,17 @@ class TaskManager(models.Manager):
                     task_hash=task_hash,
                     priority=priority,
                     run_at=run_at)
+
+    def get_task(self, task_name, args=None, kwargs=None):
+        args = args or ()
+        kwargs = kwargs or {}
+        task_params = json.dumps((args, kwargs))
+        task_hash = sha1(task_name + task_params).hexdigest()
+        qs = self.get_query_set()
+        return qs.filter(task_hash=task_hash)
+
+    def drop_task(self, task_name, args=None, kwargs=None):
+        return self.get_task(task_name, args, kwargs).delete()
 
 @python_2_unicode_compatible
 class Task(models.Model):
@@ -90,7 +104,7 @@ class Task(models.Model):
         return args, kwargs
 
     def lock(self, locked_by):
-        now = datetime_now()
+        now = datetime.utcnow().replace(tzinfo=utc)
         unlocked = Task.objects.unlocked(now).filter(pk=self.pk)
         updated = unlocked.update(locked_by=locked_by, locked_at=now)
         if updated:
@@ -107,12 +121,12 @@ class Task(models.Model):
         max_attempts = getattr(settings, 'MAX_ATTEMPTS', 25)
 
         if self.attempts >= max_attempts:
-            self.failed_at = datetime_now()
+            self.failed_at = datetime.utcnow().replace(tzinfo=utc)
             logging.warn('Marking task %s as failed', self)
         else:
             self.attempts += 1
             backoff = timedelta(seconds=(self.attempts ** 4) + 5)
-            self.run_at = datetime_now() + backoff
+            self.run_at = datetime.utcnow().replace(tzinfo=utc) + backoff
             logging.warn('Rescheduling task %s for %s later at %s', self,
                 backoff, self.run_at)
 

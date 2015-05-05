@@ -15,7 +15,7 @@ DATABASES = {
 }
 
 
-INSTALLED_APPS = [ 'background_task' ]
+INSTALLED_APPS = ['background_task', ]
 
 
 if 'test_coverage' in sys.argv:
@@ -25,3 +25,5 @@ if 'test_coverage' in sys.argv:
     COVERAGE_MODULE_EXCLUDES = []
 
 SECRET_KEY = 'foo'
+
+USE_TZ = True

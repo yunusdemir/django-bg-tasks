@@ -14,6 +14,9 @@ from compat import import_module
 
 from .models import Task, datetime_now, CompletedTask
 
+from django.utils.timezone import utc
+
+
 
 class Tasks(object):
     def __init__(self):
@@ -94,7 +97,7 @@ class TaskSchedule(object):
 
     @property
     def run_at(self):
-        run_at = self._run_at or datetime_now()
+        run_at = self._run_at or datetime.utcnow().replace(tzinfo=utc)
         if isinstance(run_at, int):
             run_at = datetime_now() + timedelta(seconds=run_at)
         if isinstance(run_at, timedelta):
@@ -137,7 +140,8 @@ class DBTaskRunner(object):
 
         if action != TaskSchedule.SCHEDULE:
             task_hash = task.task_hash
-            unlocked = Task.objects.unlocked(datetime_now())
+            now = datetime.utcnow().replace(tzinfo=utc)
+            unlocked = Task.objects.unlocked(now)
             existing = unlocked.filter(task_hash=task_hash)
             if action == TaskSchedule.RESCHEDULE_EXISTING:
                 updated = existing.update(run_at=run_at, priority=priority)
