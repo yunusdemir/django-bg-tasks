@@ -2,4 +2,5 @@ include README.rst
 include LICENSE
 include AUTHORS
 include requirements.txt
+include classifiers
 recursive-include tests *
