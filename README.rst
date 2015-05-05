@@ -2,9 +2,14 @@
 Django Background Tasks
 =======================
 
+
+Support:
+  - Python: 2 & 3
+  - Django: 1.4 - 1.8
+
 .. image:: https://travis-ci.org/arteria/django-background-tasks.svg
     :target: https://travis-ci.org/arteria/django-background-tasks
-    
+
 
 Django Background Task is a databased-backed work queue for Django_, loosely based around Ruby's DelayedJob_ library. This project was adopted and adapted from this_ repo.
 
