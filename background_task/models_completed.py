@@ -2,8 +2,6 @@ from django.db import models
 from django.utils.datetime_safe import strftime
 from django.utils.timezone import localtime
 
-__author__ = 'q19420'
-
 
 class CompletedTask(models.Model):
     # the "name" of the task/function to be run
