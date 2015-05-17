@@ -5,7 +5,7 @@ from django.utils.encoding import python_2_unicode_compatible
 import django
 
 
-from django.utils.timezone import utc
+from django.utils import timezone
 from datetime import datetime, timedelta
 
 from hashlib import sha1
@@ -20,8 +20,6 @@ from .models_completed import CompletedTask
 import json
 
 
-from django.utils import timezone
-datetime_now = timezone.now
 
 
 # inspired by http://github.com/tobi/delayed_job
@@ -30,7 +28,7 @@ datetime_now = timezone.now
 class TaskManager(models.Manager):
 
     def find_available(self):
-        now = datetime.utcnow().replace(tzinfo=utc)
+        now = timezone.now()
         qs = self.unlocked(now)
         ready = qs.filter(run_at__lte=now, failed_at=None)
         return ready.order_by('-priority', 'run_at')
@@ -47,7 +45,7 @@ class TaskManager(models.Manager):
         args = args or ()
         kwargs = kwargs or {}
         if run_at is None:
-            run_at = datetime.utcnow().replace(tzinfo=utc)
+            run_at = timezone.now()
 
         task_params = json.dumps((args, kwargs))
         task_hash = sha1((task_name + task_params).encode()).hexdigest()
@@ -104,7 +102,7 @@ class Task(models.Model):
         return args, kwargs
 
     def lock(self, locked_by):
-        now = datetime.utcnow().replace(tzinfo=utc)
+        now = timezone.now()
         unlocked = Task.objects.unlocked(now).filter(pk=self.pk)
         updated = unlocked.update(locked_by=locked_by, locked_at=now)
         if updated:
@@ -121,12 +119,12 @@ class Task(models.Model):
         max_attempts = getattr(settings, 'MAX_ATTEMPTS', 25)
 
         if self.attempts >= max_attempts:
-            self.failed_at = datetime.utcnow().replace(tzinfo=utc)
+            self.failed_at = timezone.now()
             logging.warn('Marking task %s as failed', self)
         else:
             self.attempts += 1
             backoff = timedelta(seconds=(self.attempts ** 4) + 5)
-            self.run_at = datetime.utcnow().replace(tzinfo=utc) + backoff
+            self.run_at = timezone.now() + backoff
             logging.warn('Rescheduling task %s for %s later at %s', self,
                 backoff, self.run_at)
 
