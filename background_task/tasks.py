@@ -97,7 +97,7 @@ class TaskSchedule(object):
 
     @property
     def run_at(self):
-        run_at = self._run_at or datetime.utcnow().replace(tzinfo=utc)
+        run_at = self._run_at or timezone.now()
         if isinstance(run_at, int):
             run_at = timezone.now() + timedelta(seconds=run_at)
         if isinstance(run_at, timedelta):
@@ -140,7 +140,7 @@ class DBTaskRunner(object):
 
         if action != TaskSchedule.SCHEDULE:
             task_hash = task.task_hash
-            now = datetime.utcnow().replace(tzinfo=utc)
+            now = timezone.now()
             unlocked = Task.objects.unlocked(now)
             existing = unlocked.filter(task_hash=task_hash)
             if action == TaskSchedule.RESCHEDULE_EXISTING:
