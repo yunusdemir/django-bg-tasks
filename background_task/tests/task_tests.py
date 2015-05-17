@@ -1,6 +1,7 @@
 import unittest
 from django.test import TransactionTestCase
 from django.conf import settings
+from django.utils import timezone
 
 from datetime import timedelta, datetime
 
@@ -9,7 +10,7 @@ if sys.version_info >= (3, 0):
     unicode = str
 
 from background_task.tasks import tasks, TaskSchedule, TaskProxy
-from background_task.models import Task, datetime_now
+from background_task.models import Task 
 from background_task import background
 
 _recorded = []
@@ -110,26 +111,26 @@ class TestTaskSchedule(unittest.TestCase):
 
     def test_run_at(self):
         for schedule in [None, 0, timedelta(seconds=0)]:
-            now = datetime_now()
+            now = timezone.now()
             run_at = TaskSchedule(run_at=schedule).run_at
             self._within_one_second(run_at, now)
 
-        now = datetime_now()
+        now = timezone.now()
         run_at = TaskSchedule(run_at=now).run_at
         self._within_one_second(run_at, now)
 
-        fixed_dt = datetime_now() + timedelta(seconds=60)
+        fixed_dt = timezone.now() + timedelta(seconds=60)
         run_at = TaskSchedule(run_at=fixed_dt).run_at
         self._within_one_second(run_at, fixed_dt)
 
         run_at = TaskSchedule(run_at=90).run_at
-        self._within_one_second(run_at, datetime_now() + timedelta(seconds=90))
+        self._within_one_second(run_at, timezone.now() + timedelta(seconds=90))
 
         run_at = TaskSchedule(run_at=timedelta(seconds=35)).run_at
-        self._within_one_second(run_at, datetime_now() + timedelta(seconds=35))
+        self._within_one_second(run_at, timezone.now() + timedelta(seconds=35))
 
     def test_create(self):
-        fixed_dt = datetime_now() + timedelta(seconds=10)
+        fixed_dt = timezone.now() + timedelta(seconds=10)
         schedule = TaskSchedule.create({'run_at': fixed_dt})
         self.assertEqual(schedule.run_at, fixed_dt)
         self.assertEqual(0, schedule.priority)
@@ -143,11 +144,11 @@ class TestTaskSchedule(unittest.TestCase):
         self.assertEqual(TaskSchedule.RESCHEDULE_EXISTING, schedule.action)
 
         schedule = TaskSchedule.create(0)
-        self._within_one_second(schedule.run_at, datetime_now())
+        self._within_one_second(schedule.run_at, timezone.now())
 
         schedule = TaskSchedule.create(10)
         self._within_one_second(schedule.run_at,
-                                datetime_now() + timedelta(seconds=10))
+                                timezone.now() + timedelta(seconds=10))
 
         schedule = TaskSchedule.create(TaskSchedule(run_at=fixed_dt))
         self.assertEqual(schedule.run_at, fixed_dt)
@@ -159,20 +160,20 @@ class TestTaskSchedule(unittest.TestCase):
                                action=TaskSchedule.RESCHEDULE_EXISTING)
         schedule = TaskSchedule.create(20).merge(default)
 
-        self._within_one_second(datetime_now() + timedelta(seconds=20),
+        self._within_one_second(timezone.now() + timedelta(seconds=20),
                                 schedule.run_at)
         self.assertEqual(2, schedule.priority)
         self.assertEqual(TaskSchedule.RESCHEDULE_EXISTING, schedule.action)
 
         schedule = TaskSchedule.create({'priority': 0}).merge(default)
-        self._within_one_second(datetime_now() + timedelta(seconds=10),
+        self._within_one_second(timezone.now() + timedelta(seconds=10),
                                 schedule.run_at)
         self.assertEqual(0, schedule.priority)
         self.assertEqual(TaskSchedule.RESCHEDULE_EXISTING, schedule.action)
 
         action = TaskSchedule.CHECK_EXISTING
         schedule = TaskSchedule.create({'action': action}).merge(default)
-        self._within_one_second(datetime_now() + timedelta(seconds=10),
+        self._within_one_second(timezone.now() + timedelta(seconds=10),
                                 schedule.run_at)
         self.assertEqual(2, schedule.priority)
         self.assertEqual(action, schedule.action)
@@ -220,7 +221,7 @@ class TestSchedulingTasks(TransactionTestCase):
         self.assertEqual('test_reschedule_existing', task.task_name)
 
         # check task is scheduled for later on
-        now = datetime_now()
+        now = timezone.now()
         self.failUnless(now + timedelta(seconds=89) < task.run_at)
         self.failUnless(now + timedelta(seconds=91) > task.run_at)
 
@@ -244,7 +245,7 @@ class TestSchedulingTasks(TransactionTestCase):
         self.assertEqual('test_check_existing', task.task_name)
 
         # check new task is scheduled for the earlier time
-        now = datetime_now()
+        now = timezone.now()
         self.failUnless(now - timedelta(seconds=1) < task.run_at)
         self.failUnless(now + timedelta(seconds=1) > task.run_at)
 
@@ -430,7 +431,7 @@ class TestTasks(TransactionTestCase):
         def default_schedule_used_for_time():
             pass
 
-        now = datetime_now()
+        now = timezone.now()
         default_schedule_used_for_time()
 
         all_tasks = Task.objects.all()
@@ -448,7 +449,7 @@ class TestTasks(TransactionTestCase):
         def default_schedule_used_for_priority():
             pass
 
-        now = datetime_now()
+        now = timezone.now()
         default_schedule_used_for_priority()
 
         all_tasks = Task.objects.all()
@@ -457,14 +458,14 @@ class TestTasks(TransactionTestCase):
         self.assertEqual(2, task.priority)
 
     def test_non_default_schedule_used(self):
-        default_run_at = datetime_now() + timedelta(seconds=90)
+        default_run_at = timezone.now() + timedelta(seconds=90)
 
         @tasks.background(name='non_default_schedule_used',
                           schedule={'run_at': default_run_at, 'priority': 2})
         def default_schedule_used_for_priority():
             pass
 
-        run_at = datetime_now().replace(microsecond=0) + timedelta(seconds=60)
+        run_at = timezone.now().replace(microsecond=0) + timedelta(seconds=60)
         default_schedule_used_for_priority(schedule=run_at)
 
         all_tasks = Task.objects.all()

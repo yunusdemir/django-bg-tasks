@@ -8,14 +8,14 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from django.db import transaction
+from django.utils import timezone
 
 # monkey patch django: get_query_set + import_module
 from compat import import_module
 
-from .models import Task, datetime_now, CompletedTask
+from .models import Task, CompletedTask
 
-from django.utils.timezone import utc
-
+ 
 
 
 class Tasks(object):
@@ -99,9 +99,9 @@ class TaskSchedule(object):
     def run_at(self):
         run_at = self._run_at or datetime.utcnow().replace(tzinfo=utc)
         if isinstance(run_at, int):
-            run_at = datetime_now() + timedelta(seconds=run_at)
+            run_at = timezone.now() + timedelta(seconds=run_at)
         if isinstance(run_at, timedelta):
-            run_at = datetime_now() + run_at
+            run_at = timezone.now() + run_at
         return run_at
 
     @property
@@ -175,7 +175,7 @@ class DBTaskRunner(object):
                                       task_params=task.task_params,
                                       task_hash=task.task_hash,
                                       priority=task.priority,
-                                      run_at=datetime_now(),
+                                      run_at=timezone.now(),
                                       attempts=task.attempts,
                                       failed_at=task.failed_at,
                                       last_error=task.last_error,
