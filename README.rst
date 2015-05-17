@@ -51,7 +51,7 @@ This is the default schedule time (as set in the decorator), but it can be overr
 
     notify_user(user.id, schedule=90) # 90 seconds from now
     notify_user(user.id, schedule=timedelta(minutes=20)) # 20 minutes from now
-    notify_user(user.id, schedule=datetime.now()) # at a specific time
+    notify_user(user.id, schedule=timezone.now()) # at a specific time
 
 Running tasks
 =============
