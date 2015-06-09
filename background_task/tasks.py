@@ -9,7 +9,7 @@ import sys
 from datetime import datetime, timedelta
 from django.db import transaction
 from django.utils import timezone
-
+from compat import atomic
 # monkey patch django: get_query_set + import_module
 from compat import import_module
 
@@ -154,6 +154,7 @@ class DBTaskRunner(object):
         task.save()
 
     # @transaction.autocommit
+    @atomic
     def get_task_to_run(self):
         tasks = Task.objects.find_available()[:5]
         for task in tasks:
@@ -165,6 +166,7 @@ class DBTaskRunner(object):
 
 
     # @transaction.autocommit
+    @atomic
     def run_task(self, tasks, task):
         try:
             logging.info('Running %s', task)
@@ -189,15 +191,15 @@ class DBTaskRunner(object):
             logging.warn('Rescheduling %s', task, exc_info=(t, e, traceback))
             task.reschedule(t, e, traceback)
             del traceback
-
+    @atomic
     def run_next_task(self, tasks):
         # we need to commit to make sure
         # we can see new tasks as they arrive
         task = self.get_task_to_run()
-        transaction.commit()
+        #transaction.commit()
         if task:
             self.run_task(tasks, task)
-            transaction.commit()
+            #transaction.commit()
             return True
         else:
             return False
