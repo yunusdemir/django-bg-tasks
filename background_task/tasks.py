@@ -1,23 +1,59 @@
 from __future__ import unicode_literals
+
 from django.utils.encoding import python_2_unicode_compatible
-
-
+from django.db import transaction
+from django.utils import timezone
+from django.conf import settings
 import django
+
 import os
 import logging
 import sys
 from datetime import datetime, timedelta
-from django.db import transaction
-from django.utils import timezone
+
 from compat import atomic
 # monkey patch django: get_query_set + import_module
 from compat import import_module
 
-from .models import Task, CompletedTask
+from background_task.models import Task 
+from background_task.models import CompletedTask
 
+
+import threading
+
+logger = logging.getLogger(__name__)
+
+
+BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False)
  
-
-
+   
+def bg_runner(task, *args, **kwargs):
+    """ Executes the function attached to task. Used to enable threads. """
+    try: 
+        func = getattr(task, 'task_function', None)
+        #TODO: what to do with None's here?
+        func(*args, **kwargs)
+        
+        
+        # task done, so can delete it
+        completed = CompletedTask(task_name=task.task_name,
+                                  task_params=task.task_params,
+                                  task_hash=task.task_hash,
+                                  priority=task.priority,
+                                  run_at=timezone.now(),
+                                  attempts=task.attempts,
+                                  failed_at=task.failed_at,
+                                  last_error=task.last_error,
+                                  locked_by=task.locked_by,
+                                  locked_at=task.locked_at)
+        completed.save()
+        task.delete()
+        logging.info('Ran task and deleting %s', task)
+        
+    except Exception as e:
+        logger.exception(str(e))
+        
+        
 class Tasks(object):
     def __init__(self):
         self._tasks = {}
@@ -43,8 +79,8 @@ class Tasks(object):
                 _name = '%s.%s' % (fn.__module__, fn.__name__)
             proxy = TaskProxy(_name, fn, schedule, self._runner)
             self._tasks[_name] = proxy
+            print "self._tasks", self._tasks
             return proxy
-
         if fn:
             return _decorator(fn)
 
@@ -52,8 +88,11 @@ class Tasks(object):
 
     def run_task(self, task_name, args, kwargs):
         task = self._tasks[task_name]
-        task.task_function(*args, **kwargs)
-
+        curr_thread = threading.Thread(target=bg_runner, args=(task,) + tuple(args), kwargs=kwargs)
+        curr_thread.start()
+        if not BACKGROUND_TASK_RUN_ASYNC:
+            curr_thread.join()
+        
     def run_next_task(self):
         return self._runner.run_next_task(self)
 
@@ -169,9 +208,11 @@ class DBTaskRunner(object):
     @atomic
     def run_task(self, tasks, task):
         try:
+            print 'Running %s', task
             logging.info('Running %s', task)
             args, kwargs = task.params()
             tasks.run_task(task.task_name, args, kwargs)
+            """
             # task done, so can delete it
             completed = CompletedTask(task_name=task.task_name,
                                       task_params=task.task_params,
@@ -186,7 +227,8 @@ class DBTaskRunner(object):
             completed.save()
             task.delete()
             logging.info('Ran task and deleting %s', task)
-        except Exception:
+            """
+        except Exception, ex:
             t, e, traceback = sys.exc_info()
             logging.warn('Rescheduling %s', task, exc_info=(t, e, traceback))
             task.reschedule(t, e, traceback)

@@ -77,10 +77,11 @@ You can use the `duration` option for simple process control, by running the man
 Settings
 ========
 
-There are two settings that can be set in your `settings.py` file.
+There are a few settings optinos that can be set in your `settings.py` file.
 
 * `MAX_ATTEMPTS` - controls how many times a task will be attempted (default 25)
 * `MAX_RUN_TIME` - maximum possible task run time, after which tasks will be unlocked and tried again (default 3600 seconds)
+* Set ``BACKGROUND_TASK_RUN_ASYNC = True`` in the project setting will run the tasks asynchronous. This means the tasks will be processed in parallel (at the same time) instead of processing one by one (one after the other).  
 
 Task errors
 ===========
@@ -90,6 +91,8 @@ Tasks are retried if they fail and the error recorded in last_error (and logged)
     (attempts ** 4) + 5
 
 This means that initially the task will be tried again a few seconds later.  After four attempts the task is tried again 261 seconds later (about four minutes).  At twenty five attempts the task will not be tried again for nearly four days!  It is not unheard of for a transient error to last a long time and this behavior is intended to stop tasks that are triggering errors constantly (i.e. due to a coding error) form dominating task processing.  You should probably monitor the task queue to check for tasks that have errors.  After `MAX_ATTEMPTS` the task will be marked as failed and will not be rescheduled again.
+
+
 
 
 .. _Django: http://www.djangoproject.com/
