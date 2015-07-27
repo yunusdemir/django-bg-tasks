@@ -34,7 +34,6 @@ def bg_runner(proxy_task, *args, **kwargs):
         task_name = getattr(proxy_task, 'name', None)
         
         task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
-        print "task_qs",  len(task_qs) 
         task = task_qs[0]
         
         print type(task)
@@ -214,7 +213,6 @@ class DBTaskRunner(object):
     @atomic
     def run_task(self, tasks, task):
         try:
-            print 'Running %s', task
             logging.info('Running %s', task)
             args, kwargs = task.params()
             tasks.run_task(task.task_name, args, kwargs)
