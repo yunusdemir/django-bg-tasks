@@ -92,6 +92,17 @@ Tasks are retried if they fail and the error recorded in last_error (and logged)
 
 This means that initially the task will be tried again a few seconds later.  After four attempts the task is tried again 261 seconds later (about four minutes).  At twenty five attempts the task will not be tried again for nearly four days!  It is not unheard of for a transient error to last a long time and this behavior is intended to stop tasks that are triggering errors constantly (i.e. due to a coding error) form dominating task processing.  You should probably monitor the task queue to check for tasks that have errors.  After `MAX_ATTEMPTS` the task will be marked as failed and will not be rescheduled again.
 
+Known issues
+============
+
+django.db.utils.OperationalError: database is locked  when using SQLite
+---
+
+This is a SQLite specific error, see https://docs.djangoproject.com/en/dev/ref/databases/#database-is-locked-errors for more details.
+
+
+
+
 
 
 

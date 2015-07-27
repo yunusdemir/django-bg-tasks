@@ -27,10 +27,17 @@ logger = logging.getLogger(__name__)
 BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False)
  
    
-def bg_runner(task, *args, **kwargs):
+def bg_runner(proxy_task, *args, **kwargs):
     """ Executes the function attached to task. Used to enable threads. """
     try: 
-        func = getattr(task, 'task_function', None)
+        func = getattr(proxy_task, 'task_function', None)
+        task_name = getattr(proxy_task, 'name', None)
+        
+        task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
+        print "task_qs",  len(task_qs) 
+        task = task_qs[0]
+        
+        print type(task)
         #TODO: what to do with None's here?
         func(*args, **kwargs)
         
@@ -79,7 +86,6 @@ class Tasks(object):
                 _name = '%s.%s' % (fn.__module__, fn.__name__)
             proxy = TaskProxy(_name, fn, schedule, self._runner)
             self._tasks[_name] = proxy
-            print "self._tasks", self._tasks
             return proxy
         if fn:
             return _decorator(fn)
@@ -87,12 +93,12 @@ class Tasks(object):
         return _decorator
 
     def run_task(self, task_name, args, kwargs):
-        task = self._tasks[task_name]
-        curr_thread = threading.Thread(target=bg_runner, args=(task,) + tuple(args), kwargs=kwargs)
-        curr_thread.start()
-        if not BACKGROUND_TASK_RUN_ASYNC:
-            curr_thread.join()
-        
+        proxy_task = self._tasks[task_name]
+        if BACKGROUND_TASK_RUN_ASYNC:
+            curr_thread = threading.Thread(target=bg_runner, args=(proxy_task,) + tuple(args), kwargs=kwargs)
+            curr_thread.start()
+        else:
+            bg_runner(proxy_task, *args, **kwargs)
     def run_next_task(self):
         return self._runner.run_next_task(self)
 
