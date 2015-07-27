@@ -233,7 +233,7 @@ class DBTaskRunner(object):
             task.delete()
             logging.info('Ran task and deleting %s', task)
             """
-        except Exception, ex:
+        except Exception as ex:
             t, e, traceback = sys.exc_info()
             logging.warn('Rescheduling %s', task, exc_info=(t, e, traceback))
             task.reschedule(t, e, traceback)
