@@ -17,7 +17,7 @@ from compat import import_module
 
 from background_task.models import Task 
 from background_task.models import CompletedTask
-
+from background_task.exceptions import BackgroundTaskError
 
 import threading
 
@@ -34,9 +34,11 @@ def bg_runner(proxy_task, *args, **kwargs):
         task_name = getattr(proxy_task, 'name', None)
         
         task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
+        if len(task_qs) == 0:
+            raise BackgroundTaskError("No matching task found!")
         task = task_qs[0]
-        
-        #TODO: what to do with None's here?
+        if func is None:
+            raise BackgroundTaskError("Function is None, can't execute!")
         func(*args, **kwargs)
         
         
