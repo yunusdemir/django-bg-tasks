@@ -36,7 +36,6 @@ def bg_runner(proxy_task, *args, **kwargs):
         task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
         task = task_qs[0]
         
-        print type(task)
         #TODO: what to do with None's here?
         func(*args, **kwargs)
         
