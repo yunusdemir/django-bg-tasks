@@ -27,3 +27,4 @@ if 'test_coverage' in sys.argv:
 SECRET_KEY = 'foo'
 
 USE_TZ = True
+BACKGROUND_TASK_RUN_ASYNC = False # Note: tests wont pass in async mode!

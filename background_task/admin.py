@@ -1,7 +1,7 @@
 from django.contrib import admin
 from models_completed import CompletedTask
 
-from .models import Task
+from background_task.models import Task
 
 
 class TaskAdmin(admin.ModelAdmin):

@@ -3,8 +3,6 @@ from django.db.models import Q
 from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible
 import django
- 
-
 
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -12,19 +10,15 @@ from datetime import datetime, timedelta
 from hashlib import sha1
 import traceback
 import logging
-
 from compat import StringIO
-
-from .models_completed import CompletedTask
-
-
+from background_task.models_completed import CompletedTask 
 import json
 
 
 
 
 # inspired by http://github.com/tobi/delayed_job
-
+# 
 
 class TaskManager(models.Manager):
 
