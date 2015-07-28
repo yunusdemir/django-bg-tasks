@@ -29,6 +29,7 @@ BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False
    
 def bg_runner(proxy_task, *args, **kwargs):
     """ Executes the function attached to task. Used to enable threads. """
+    task = None
     try: 
         func = getattr(proxy_task, 'task_function', None)
         task_name = getattr(proxy_task, 'name', None)
@@ -57,8 +58,12 @@ def bg_runner(proxy_task, *args, **kwargs):
         task.delete()
         logging.info('Ran task and deleting %s', task)
         
-    except Exception as e:
-        logger.exception(str(e))
+    except Exception as ex:
+        t, e, traceback = sys.exc_info()
+        if task:
+            logging.warn('Rescheduling %s', task, exc_info=(t, e, traceback))
+            task.reschedule(t, e, traceback)
+        del traceback
         
         
 class Tasks(object):
@@ -197,8 +202,7 @@ class DBTaskRunner(object):
                     return
 
         task.save()
-
-    # @transaction.autocommit
+ 
     @atomic
     def get_task_to_run(self):
         tasks = Task.objects.find_available()[:5]
@@ -210,34 +214,13 @@ class DBTaskRunner(object):
         return None
 
 
-    # @transaction.autocommit
     @atomic
     def run_task(self, tasks, task):
-        try:
-            logging.info('Running %s', task)
-            args, kwargs = task.params()
-            tasks.run_task(task.task_name, args, kwargs)
-            """
-            # task done, so can delete it
-            completed = CompletedTask(task_name=task.task_name,
-                                      task_params=task.task_params,
-                                      task_hash=task.task_hash,
-                                      priority=task.priority,
-                                      run_at=timezone.now(),
-                                      attempts=task.attempts,
-                                      failed_at=task.failed_at,
-                                      last_error=task.last_error,
-                                      locked_by=task.locked_by,
-                                      locked_at=task.locked_at)
-            completed.save()
-            task.delete()
-            logging.info('Ran task and deleting %s', task)
-            """
-        except Exception as ex:
-            t, e, traceback = sys.exc_info()
-            logging.warn('Rescheduling %s', task, exc_info=(t, e, traceback))
-            task.reschedule(t, e, traceback)
-            del traceback
+        logging.info('Running %s', task)
+        args, kwargs = task.params()
+        tasks.run_task(task.task_name, args, kwargs)
+
+
     @atomic
     def run_next_task(self, tasks):
         # we need to commit to make sure
