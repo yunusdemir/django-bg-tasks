@@ -6,6 +6,7 @@ Django Background Tasks
 .. image:: https://travis-ci.org/arteria/django-background-tasks.svg
     :target: https://travis-ci.org/arteria/django-background-tasks
 
+↑ Yes, the tests are failing but the app works as expected. See issue 25_ for more info.
 
 
 Django Background Task is a databased-backed work queue for Django_, loosely based around Ruby's DelayedJob_ library. This project was adopted and adapted from this_ repo.
@@ -95,10 +96,7 @@ This means that initially the task will be tried again a few seconds later.  Aft
 Known issues
 ============
 
-django.db.utils.OperationalError: database is locked  when using SQLite
----
-
-This is a SQLite specific error, see https://docs.djangoproject.com/en/dev/ref/databases/#database-is-locked-errors for more details.
+* ``django.db.utils.OperationalError: database is locked`` when using SQLite. This is a SQLite specific error, see https://docs.djangoproject.com/en/dev/ref/databases/#database-is-locked-errors for more details.
 
 
 
@@ -112,3 +110,4 @@ This is a SQLite specific error, see https://docs.djangoproject.com/en/dev/ref/d
 .. _this: https://github.com/lilspikey/django-background-task
 .. _compat:  https://github.com/arteria/django-compat
 .. _django-compat:  https://github.com/arteria/django-compat
+.. _25: https://github.com/arteria/django-background-tasks/issues/25
