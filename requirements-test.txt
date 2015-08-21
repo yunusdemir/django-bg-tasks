@@ -1,4 +1,4 @@
 nose
 django-nose
-django-compat
+django-compat>=1.0.6
 six

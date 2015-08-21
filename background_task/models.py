@@ -3,6 +3,8 @@ from django.db.models import Q
 from django.conf import settings
 from django.utils.encoding import python_2_unicode_compatible
 import django
+import inspect
+
 
 from django.utils import timezone
 from datetime import datetime, timedelta
@@ -14,14 +16,52 @@ from compat import StringIO
 from background_task.models_completed import CompletedTask 
 import json
 
-
-
+ 
 
 # inspired by http://github.com/tobi/delayed_job
 # 
 
-class TaskManager(models.Manager):
+# Django 1.6 renamed Manager's get_query_set to get_queryset, and the old
+# function will be removed entirely in 1.8. We work back to 1.4, so use a
+# metaclass to not worry about it.
+# from https://github.com/mysociety/mapit/blob/master/mapit/djangopatch.py#L14-L42
 
+try:
+    from django.utils import six
+except ImportError:  # Django < 1.4.2
+    import six 
+    
+    
+if django.get_version() < '1.6':
+    class GetQuerySetMetaclass(type):
+        def __new__(cls, name, bases, attrs):
+            new_class = super(GetQuerySetMetaclass, cls).__new__(cls, name, bases, attrs)
+
+            old_method_name = 'get_query_set'
+            new_method_name = 'get_queryset'
+            for base in inspect.getmro(new_class):
+                old_method = base.__dict__.get(old_method_name)
+                new_method = base.__dict__.get(new_method_name)
+
+                if not new_method and old_method:
+                    setattr(base, new_method_name, old_method)
+                if not old_method and new_method:
+                    setattr(base, old_method_name, new_method)
+
+            return new_class
+elif django.get_version() < '1.8':
+    # Nothing to do, make an empty metaclass
+    from django.db.models.manager import RenameManagerMethods
+
+    class GetQuerySetMetaclass(RenameManagerMethods):
+        pass
+else:
+    class GetQuerySetMetaclass(type):
+        pass
+        
+        
+class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
+    
     def find_available(self):
         now = timezone.now()
         qs = self.unlocked(now)
@@ -30,7 +70,7 @@ class TaskManager(models.Manager):
 
     def unlocked(self, now):
         max_run_time = getattr(settings, 'MAX_RUN_TIME', 3600)
-        qs = self.get_query_set()
+        qs = self.get_queryset()
         expires_at = now - timedelta(seconds=max_run_time)
         unlocked = Q(locked_by=None) | Q(locked_at__lt=expires_at)
         return qs.filter(unlocked)
@@ -56,7 +96,7 @@ class TaskManager(models.Manager):
         kwargs = kwargs or {}
         task_params = json.dumps((args, kwargs))
         task_hash = sha1(task_name + task_params).hexdigest()
-        qs = self.get_query_set()
+        qs = self.get_queryset()
         return qs.filter(task_hash=task_hash)
 
     def drop_task(self, task_name, args=None, kwargs=None):
