@@ -12,7 +12,6 @@ import sys
 from datetime import datetime, timedelta
 
 from compat import atomic
-# monkey patch django: get_query_set + import_module
 from compat import import_module
 
 from background_task.models import Task 
