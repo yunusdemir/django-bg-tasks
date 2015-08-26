@@ -100,7 +100,10 @@ Known issues
 
 
 
+Example project
+===============
 
+Hiroaki Nakamura has written an example project demonstrating how django-background-tasks works. You find it here_.
 
 
 
@@ -111,3 +114,4 @@ Known issues
 .. _compat:  https://github.com/arteria/django-compat
 .. _django-compat:  https://github.com/arteria/django-compat
 .. _25: https://github.com/arteria/django-background-tasks/issues/25
+.. _here: https://github.com/hnakamur/django-background-tasks-example/
