@@ -83,8 +83,8 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
             run_at = timezone.now()
 
         task_params = json.dumps((args, kwargs))
-        task_hash = sha1((task_name.encode('utf-8') + task_params.encode('utf-8')).encode()).hexdigest()
-
+        s = "%s%s" % (task_name, task_params)
+        task_hash = sha1(s.encode('utf-8')).hexdigest()
         return Task(task_name=task_name,
                     task_params=task_params,
                     task_hash=task_hash,
@@ -95,7 +95,8 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         args = args or ()
         kwargs = kwargs or {}
         task_params = json.dumps((args, kwargs))
-        task_hash = sha1(task_name + task_params).hexdigest()
+        s = "%s%s" % (task_name, task_params)
+        task_hash = sha1(s.encode('utf-8')).hexdigest()
         qs = self.get_queryset()
         return qs.filter(task_hash=task_hash)
 
