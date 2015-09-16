@@ -36,10 +36,12 @@ Installation
         # ...
     )
 
-3. Autodiscover tasks in your apps' ``tasks.py`` file. Add the following to your base ``urls.py`` so that autodiscover runs when your project starts up::
+(3.) Autodiscover tasks in your apps' ``tasks.py`` file. Add the following to your base ``urls.py`` so that autodiscover runs when your project starts up::
 
     from background_task import tasks
     tasks.autodiscover()
+    
+Do this in case you are not using the management command to execute the tasks.
 
 
 Supported versions and compatibility
