@@ -21,13 +21,34 @@ There are two parts to using background tasks:
 * setup a cron task (or long running process) to execute the tasks
 
 
+Installation
+============
+
+1. Install from PyPI::
+
+    pip install django-background-tasks
+
+2. Add to INSTALLED_APPS::
+
+    INSTALLED_APPS = (
+        # ...
+        'background_task',
+        # ...
+    )
+
+3. Autodiscover tasks in your apps' ``tasks.py`` file. Add the following to your base ``urls.py`` so that autodiscover runs when your project starts up::
+
+    from background_task import tasks
+    tasks.autodiscover()
+
+
 Supported versions and compatibility
-==============================  
+====================================
 * Python: 2 & 3
 * Django: 1.4 - 1.8
 
 Full Django LTS to LTS compatibility through django-compat_.
-  
+
 Creating and registering tasks
 ==============================
 
@@ -35,7 +56,7 @@ To register a task use the background decorator::
 
     from background_task import background
     from django.contrib.auth.models import User
-    
+
     @background(schedule=60)
     def notify_user(user_id):
         # lookup user by id and send them a message
@@ -82,7 +103,7 @@ There are a few settings optinos that can be set in your `settings.py` file.
 
 * `MAX_ATTEMPTS` - controls how many times a task will be attempted (default 25)
 * `MAX_RUN_TIME` - maximum possible task run time, after which tasks will be unlocked and tried again (default 3600 seconds)
-* Set ``BACKGROUND_TASK_RUN_ASYNC = True`` in the project setting will run the tasks asynchronous. This means the tasks will be processed in parallel (at the same time) instead of processing one by one (one after the other).  
+* Set ``BACKGROUND_TASK_RUN_ASYNC = True`` in the project setting will run the tasks asynchronous. This means the tasks will be processed in parallel (at the same time) instead of processing one by one (one after the other).
 
 Task errors
 ===========
