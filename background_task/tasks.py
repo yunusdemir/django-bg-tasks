@@ -34,28 +34,27 @@ def bg_runner(proxy_task, *args, **kwargs):
         task_name = getattr(proxy_task, 'name', None)
         
         task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
-        if len(task_qs) == 0:
-            raise BackgroundTaskError("No matching task found!")
-        task = task_qs[0]
+        if task_qs:
+            task = task_qs[0]
         if func is None:
             raise BackgroundTaskError("Function is None, can't execute!")
         func(*args, **kwargs)
         
-        
-        # task done, so can delete it
-        completed = CompletedTask(task_name=task.task_name,
-                                  task_params=task.task_params,
-                                  task_hash=task.task_hash,
-                                  priority=task.priority,
-                                  run_at=timezone.now(),
-                                  attempts=task.attempts,
-                                  failed_at=task.failed_at,
-                                  last_error=task.last_error,
-                                  locked_by=task.locked_by,
-                                  locked_at=task.locked_at)
-        completed.save()
-        task.delete()
-        logging.info('Ran task and deleting %s', task)
+        if task:
+            # task done, so can delete it
+            completed = CompletedTask(task_name=task.task_name,
+                                      task_params=task.task_params,
+                                      task_hash=task.task_hash,
+                                      priority=task.priority,
+                                      run_at=timezone.now(),
+                                      attempts=task.attempts,
+                                      failed_at=task.failed_at,
+                                      last_error=task.last_error,
+                                      locked_by=task.locked_by,
+                                      locked_at=task.locked_at)
+            completed.save()
+            task.delete()
+            logging.info('Ran task and deleting %s', task)
         
     except Exception as ex:
         t, e, traceback = sys.exc_info()
