@@ -68,6 +68,8 @@ class Tasks(object):
     def __init__(self):
         self._tasks = {}
         self._runner = DBTaskRunner()
+        self._task_proxy_class = TaskProxy
+        self._bg_runner = bg_runner
 
     def background(self, name=None, schedule=None):
         '''
@@ -87,7 +89,7 @@ class Tasks(object):
             _name = name
             if not _name:
                 _name = '%s.%s' % (fn.__module__, fn.__name__)
-            proxy = TaskProxy(_name, fn, schedule, self._runner)
+            proxy = self._task_proxy_class(_name, fn, schedule, self._runner)
             self._tasks[_name] = proxy
             return proxy
         if fn:
@@ -98,10 +100,10 @@ class Tasks(object):
     def run_task(self, task_name, args, kwargs):
         proxy_task = self._tasks[task_name]
         if BACKGROUND_TASK_RUN_ASYNC:
-            curr_thread = threading.Thread(target=bg_runner, args=(proxy_task,) + tuple(args), kwargs=kwargs)
+            curr_thread = threading.Thread(target=self._bg_runner, args=(proxy_task,) + tuple(args), kwargs=kwargs)
             curr_thread.start()
         else:
-            bg_runner(proxy_task, *args, **kwargs)
+            self._bg_runner(proxy_task, *args, **kwargs)
     def run_next_task(self):
         return self._runner.run_next_task(self)
 
@@ -200,11 +202,13 @@ class DBTaskRunner(object):
                     return
 
         task.save()
+        return task
  
     @atomic
-    def get_task_to_run(self):
-        tasks = Task.objects.find_available()[:5]
-        for task in tasks:
+    def get_task_to_run(self, tasks):
+        available_tasks = [task for task in Task.objects.find_available()
+                           if task.task_name in tasks._tasks][:5]
+        for task in available_tasks:
             # try to lock task
             locked_task = task.lock(self.worker_name)
             if locked_task:
@@ -223,7 +227,7 @@ class DBTaskRunner(object):
     def run_next_task(self, tasks):
         # we need to commit to make sure
         # we can see new tasks as they arrive
-        task = self.get_task_to_run()
+        task = self.get_task_to_run(tasks)
         #transaction.commit()
         if task:
             self.run_task(tasks, task)
@@ -246,7 +250,7 @@ class TaskProxy(object):
         run_at = schedule.run_at
         priority = schedule.priority
         action = schedule.action
-        self.runner.schedule(self.name, args, kwargs, run_at, priority, action)
+        return self.runner.schedule(self.name, args, kwargs, run_at, priority, action)
 
     def __str__(self):
         return 'TaskProxy(%s)' % self.name

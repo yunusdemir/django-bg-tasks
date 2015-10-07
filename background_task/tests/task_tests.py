@@ -257,7 +257,7 @@ class TestTaskRunner(TransactionTestCase):
         self.runner = tasks._runner
 
     def test_get_task_to_run_no_tasks(self):
-        self.failIf(self.runner.get_task_to_run())
+        self.failIf(self.runner.get_task_to_run(tasks))
 
     def test_get_task_to_run(self):
         task = Task.objects.new_task('mytask', (1), {})
@@ -265,7 +265,7 @@ class TestTaskRunner(TransactionTestCase):
         self.failUnless(task.locked_by is None)
         self.failUnless(task.locked_at is None)
 
-        locked_task = self.runner.get_task_to_run()
+        locked_task = self.runner.get_task_to_run(tasks)
         self.failIf(locked_task is None)
         self.failIf(locked_task.locked_by is None)
         self.assertEqual(self.runner.worker_name, locked_task.locked_by)

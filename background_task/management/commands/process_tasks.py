@@ -38,6 +38,11 @@ class Command(BaseCommand):
                 dest='log_level',
                 help='Set logging level (%s)' % ', '.join(LOG_LEVELS)),
             )
+
+    def __init__(self, *args, **kwargs):
+        super(Command, self).__init__(*args, **kwargs)
+        self._tasks = tasks
+
     
     def _configure_logging(self, log_level, log_file, log_std):
 
@@ -78,6 +83,6 @@ class Command(BaseCommand):
         start_time = time.time()
         
         while (duration <= 0) or (time.time() - start_time) <= duration:
-            if not tasks.run_next_task():
+            if not self._tasks.run_next_task():
                 logging.debug('waiting for tasks')
                 time.sleep(sleep)
