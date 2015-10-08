@@ -152,13 +152,12 @@ class Task(models.Model):
 
     def reschedule(self, type, err, traceback):
         self.last_error = self._extract_error(type, err, traceback)
+        self.attempts += 1
         max_attempts = getattr(settings, 'MAX_ATTEMPTS', 25)
-
         if self.attempts >= max_attempts:
             self.failed_at = timezone.now()
             logging.warn('Marking task %s as failed', self)
         else:
-            self.attempts += 1
             backoff = timedelta(seconds=(self.attempts ** 4) + 5)
             self.run_at = timezone.now() + backoff
             logging.warn('Rescheduling task %s for %s later at %s', self,
