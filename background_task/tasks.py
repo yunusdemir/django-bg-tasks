@@ -14,9 +14,10 @@ from datetime import datetime, timedelta
 from compat import atomic
 from compat import import_module
 
-from background_task.models import Task 
-from background_task.models import CompletedTask
 from background_task.exceptions import BackgroundTaskError
+from background_task.models import Task
+from background_task.models import CompletedTask
+from background_task.signals import task_created, task_failed, task_completed
 
 import threading
 
@@ -53,6 +54,7 @@ def bg_runner(proxy_task, *args, **kwargs):
                                       locked_by=task.locked_by,
                                       locked_at=task.locked_at)
             completed.save()
+            task_completed.send(sender=task.__class__, completed_task=completed)
             task.delete()
             logging.info('Ran task and deleting %s', task)
         
@@ -60,6 +62,7 @@ def bg_runner(proxy_task, *args, **kwargs):
         t, e, traceback = sys.exc_info()
         if task:
             logging.warn('Rescheduling %s', task, exc_info=(t, e, traceback))
+            task_failed.send(sender=ex.__class__, task=task)
             task.reschedule(t, e, traceback)
         del traceback
         
@@ -202,6 +205,7 @@ class DBTaskRunner(object):
                     return
 
         task.save()
+        task_created.send(sender=self.__class__, task=task)
         return task
  
     @atomic
