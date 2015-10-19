@@ -13,8 +13,10 @@ from hashlib import sha1
 import traceback
 import logging
 from compat import StringIO
-from background_task.models_completed import CompletedTask 
 import json
+
+from background_task.models_completed import CompletedTask
+from background_task.signals import task_failed
 
  
 
@@ -157,6 +159,7 @@ class Task(models.Model):
         if self.attempts >= max_attempts:
             self.failed_at = timezone.now()
             logging.warn('Marking task %s as failed', self)
+            task_failed.send(sender=self.__class__, task=self)
         else:
             backoff = timedelta(seconds=(self.attempts ** 4) + 5)
             self.run_at = timezone.now() + backoff
