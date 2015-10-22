@@ -16,7 +16,7 @@ from compat import StringIO
 import json
 
 from background_task.models_completed import CompletedTask
-from background_task.signals import task_failed
+from background_task.signals import task_failed, task_rescheduled
 
  
 
@@ -152,25 +152,55 @@ class Task(models.Model):
         traceback.print_exception(type, err, tb, None, file)
         return file.getvalue()
 
-    def reschedule(self, type, err, traceback):
-        self.last_error = self._extract_error(type, err, traceback)
+    def increment_attempts(self):
         self.attempts += 1
+        self.save()
+
+    def has_reached_max_attempts(self):
         max_attempts = getattr(settings, 'MAX_ATTEMPTS', 25)
-        if self.attempts >= max_attempts:
+        return self.attempts >= max_attempts
+
+    def reschedule(self, type, err, traceback):
+        '''
+        Set a new time to run the task in future, or create a CompletedTask and delete the Task
+        if it has reached the maximum of allowed attempts
+        '''
+        self.last_error = self._extract_error(type, err, traceback)
+        self.increment_attempts()
+        if self.has_reached_max_attempts():
             self.failed_at = timezone.now()
             logging.warn('Marking task %s as failed', self)
-            task_failed.send(sender=self.__class__, task=self)
+            completed = self.create_completed_task()
+            task_failed.send(sender=self.__class__, task_id=self.id, completed_task=completed)
+            self.delete()
         else:
             backoff = timedelta(seconds=(self.attempts ** 4) + 5)
             self.run_at = timezone.now() + backoff
             logging.warn('Rescheduling task %s for %s later at %s', self,
                 backoff, self.run_at)
+            task_rescheduled.send(sender=self.__class__, task=self)
+            self.locked_by = None
+            self.locked_at = None
+            self.save()
 
-        # and unlock
-        self.locked_by = None
-        self.locked_at = None
-
-        self.save()
+    def create_completed_task(self):
+        '''
+        Returns a new CompletedTask instance with the same values
+        '''
+        completed_task = CompletedTask(
+            task_name=self.task_name,
+            task_params=self.task_params,
+            task_hash=self.task_hash,
+            priority=self.priority,
+            run_at=timezone.now(),
+            attempts=self.attempts,
+            failed_at=self.failed_at,
+            last_error=self.last_error,
+            locked_by=self.locked_by,
+            locked_at=self.locked_at
+        )
+        completed_task.save()
+        return completed_task
 
     def save(self, *arg, **kw):
         # force NULL rather than empty string

@@ -17,7 +17,7 @@ from compat import import_module
 from background_task.exceptions import BackgroundTaskError
 from background_task.models import Task
 from background_task.models import CompletedTask
-from background_task.signals import task_created, task_error, task_completed
+from background_task.signals import task_created, task_error, task_successful
 
 import threading
 
@@ -43,18 +43,9 @@ def bg_runner(proxy_task, *args, **kwargs):
         
         if task:
             # task done, so can delete it
-            completed = CompletedTask(task_name=task.task_name,
-                                      task_params=task.task_params,
-                                      task_hash=task.task_hash,
-                                      priority=task.priority,
-                                      run_at=timezone.now(),
-                                      attempts=task.attempts,
-                                      failed_at=task.failed_at,
-                                      last_error=task.last_error,
-                                      locked_by=task.locked_by,
-                                      locked_at=task.locked_at)
-            completed.save()
-            task_completed.send(sender=task.__class__, task_id=task.id, completed_task=completed)
+            task.increment_attempts()
+            completed = task.create_completed_task()
+            task_successful.send(sender=task.__class__, task_id=task.id, completed_task=completed)
             task.delete()
             logging.info('Ran task and deleting %s', task)
         
