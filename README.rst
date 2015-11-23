@@ -98,7 +98,7 @@ You can use the `duration` option for simple process control, by running the man
 Settings
 ========
 
-There are a few settings optinos that can be set in your `settings.py` file.
+There are a few settings options that can be set in your `settings.py` file.
 
 * `MAX_ATTEMPTS` - controls how many times a task will be attempted (default 25)
 * `MAX_RUN_TIME` - maximum possible task run time, after which tasks will be unlocked and tried again (default 3600 seconds)
