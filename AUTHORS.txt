@@ -8,5 +8,6 @@ Contributors
 * tdruez (tdruez)
 * Chad G. Hansen (chadgh)
 * Grant McConnaughey (grantmcconnaughey)
+* James Mason (bear454)
 
 Your name could stand here :)
