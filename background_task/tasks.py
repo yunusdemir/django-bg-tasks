@@ -101,10 +101,8 @@ class Tasks(object):
             task_name = task.task_name
             args = []     # when we have a Task instance we don't care about args and kwargs here
             kwargs = {}   # kept for backward compatibility
-        elif isinstance(task_name, str):
-            task = None
         else:
-            raise ValueError("task_naem must be either string or Task instance")
+            task = None
         proxy_task = self._tasks[task_name]
         if BACKGROUND_TASK_RUN_ASYNC:
             curr_thread = threading.Thread(target=self._bg_runner, args=(proxy_task, task) + tuple(args), kwargs=kwargs)
