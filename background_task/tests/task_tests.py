@@ -80,18 +80,17 @@ class TestBackgroundDecorator(unittest.TestCase):
         self.assertEqual(proxy.task_function, empty_task)
 
     def test_launch_sync(self):
-        '''
-        '''
+        ''' Check launch original function in synchronous mode '''
         @background
         def add(x, y):
             return x+y
 
-        self.assertEqual(Task.objects.count(), 0)
-        self.assertEqual(CompletedTask.objects.count(), 0)
+        t = Task.objects.count()
+        ct = CompletedTask.objects.count()
         answer = add.now(2, 3)
         self.assertEqual(answer, 5)
-        self.assertEqual(Task.objects.count(), 0)
-        self.assertEqual(CompletedTask.objects.count(), 0)
+        self.assertEqual(Task.objects.count(), t, 'Task was created')
+        self.assertEqual(CompletedTask.objects.count(), ct, 'Completed task was created')
 
 
 class TestTaskProxy(unittest.TestCase):
