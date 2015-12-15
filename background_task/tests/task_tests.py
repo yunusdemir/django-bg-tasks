@@ -79,6 +79,20 @@ class TestBackgroundDecorator(unittest.TestCase):
         self.failIfEqual(proxy, empty_task)
         self.assertEqual(proxy.task_function, empty_task)
 
+    def test_launch_sync(self):
+        '''
+        '''
+        @background
+        def add(x, y):
+            return x+y
+
+        self.assertEqual(Task.objects.count(), 0)
+        self.assertEqual(CompletedTask.objects.count(), 0)
+        answer = add.now(2, 3)
+        self.assertEqual(answer, 5)
+        self.assertEqual(Task.objects.count(), 0)
+        self.assertEqual(CompletedTask.objects.count(), 0)
+
 
 class TestTaskProxy(unittest.TestCase):
 

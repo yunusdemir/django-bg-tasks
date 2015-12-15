@@ -74,6 +74,14 @@ This is the default schedule time (as set in the decorator), but it can be overr
     notify_user(user.id, schedule=timedelta(minutes=20)) # 20 minutes from now
     notify_user(user.id, schedule=timezone.now()) # at a specific time
 
+
+Also you can run original function right now in synchronous mode::
+
+    notify_user.now(user.id)   # launch a notify_user function and wait for it
+    notify_user = notify_user.now   # revert task function back to normal function. Useful for testing.
+
+
+
 Running tasks
 =============
 
