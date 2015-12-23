@@ -2,6 +2,7 @@ import unittest
 from django.test import TransactionTestCase
 from django.conf import settings
 from django.utils import timezone
+import random
 
 from datetime import timedelta, datetime
 
@@ -100,6 +101,7 @@ class TestTaskProxy(unittest.TestCase):
 
     def test_run_task(self):
         tasks.run_task(self.proxy.name, [], {})
+        print(self.proxy.name)
         self.assertEqual(((), {}), _recorded.pop())
 
         tasks.run_task(self.proxy.name, ['hi'], {})
@@ -522,6 +524,8 @@ class MaxAttemptsTestCase(TransactionTestCase):
         @tasks.background(name='failing task')
         def failing_task():
             return 0/0
+        CompletedTask.objects.all().delete()
+        Task.objects.all().delete()
         self.failing_task = failing_task
         self.task1 = self.failing_task()
         self.task2 = self.failing_task()
@@ -554,3 +558,20 @@ class MaxAttemptsTestCase(TransactionTestCase):
             tasks.run_next_task()
             self.assertEqual(Task.objects.count(), 2)
             self.assertEqual(CompletedTask.objects.count(), 0)
+
+class ArgumentsWithDictTestCase(unittest.TestCase):
+    def setUp(self):
+        @tasks.background(name='failing task')
+        def task(d):
+            pass
+        self.task = task
+
+    def test_task_with_dictionary_in_args(self):
+        self.assertEqual(Task.objects.count(), 0)
+
+        d = {random.randint(1,1000):random.randint(1,1000) for _ in range(random.randint(1,10))}
+        self.task(d)
+        self.assertEqual(Task.objects.count(), 1, 'Task dont created')
+
+        tasks.run_next_task()
+        self.assertEqual(Task.objects.count(), 0, 'Task dont started')

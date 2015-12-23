@@ -27,16 +27,19 @@ logger = logging.getLogger(__name__)
 BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False)
  
    
-def bg_runner(proxy_task, *args, **kwargs):
-    """ Executes the function attached to task. Used to enable threads. """
-    task = None
-    try: 
+def bg_runner(proxy_task, task=None, *args, **kwargs):
+    """ Executes the function attached to task. Used to enable threads.
+        If provided task instance args and kwargs are ignored and retrieve from task.
+     """
+    try:
         func = getattr(proxy_task, 'task_function', None)
-        task_name = getattr(proxy_task, 'name', None)
-        
-        task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
-        if task_qs:
-            task = task_qs[0]
+        if isinstance(task, Task):
+            args, kwargs = task.params()
+        else:
+            task_name = getattr(proxy_task, 'name', None)
+            task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
+            if task_qs:
+                task = task_qs[0]
         if func is None:
             raise BackgroundTaskError("Function is None, can't execute!")
         func(*args, **kwargs)
@@ -91,13 +94,21 @@ class Tasks(object):
 
         return _decorator
 
-    def run_task(self, task_name, args, kwargs):
+    def run_task(self, task_name, args=None, kwargs=None):
+        # task_name can be either task_name or Task instance.
+        if isinstance(task_name, Task):
+            task = task_name
+            task_name = task.task_name
+            args = []     # when we have a Task instance we don't care about args and kwargs here
+            kwargs = {}   # kept for backward compatibility
+        else:
+            task = None
         proxy_task = self._tasks[task_name]
         if BACKGROUND_TASK_RUN_ASYNC:
-            curr_thread = threading.Thread(target=self._bg_runner, args=(proxy_task,) + tuple(args), kwargs=kwargs)
+            curr_thread = threading.Thread(target=self._bg_runner, args=(proxy_task, task) + tuple(args), kwargs=kwargs)
             curr_thread.start()
         else:
-            self._bg_runner(proxy_task, *args, **kwargs)
+            self._bg_runner(proxy_task, task, *args, **kwargs)
     def run_next_task(self):
         return self._runner.run_next_task(self)
 
@@ -214,8 +225,7 @@ class DBTaskRunner(object):
     @atomic
     def run_task(self, tasks, task):
         logging.info('Running %s', task)
-        args, kwargs = task.params()
-        tasks.run_task(task.task_name, args, kwargs)
+        tasks.run_task(task)
 
 
     @atomic
