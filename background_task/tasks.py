@@ -28,9 +28,10 @@ BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False
  
    
 def bg_runner(proxy_task, task=None, *args, **kwargs):
-    """ Executes the function attached to task. Used to enable threads.
-        If provided task instance args and kwargs are ignored and retrieve from task.
-     """
+    """
+    Executes the function attached to task. Used to enable threads.
+    If a Task instance is provided, args and kwargs are ignored and retrieved from the Task itself.
+    """
     try:
         func = getattr(proxy_task, 'task_function', None)
         if isinstance(task, Task):
@@ -95,12 +96,13 @@ class Tasks(object):
         return _decorator
 
     def run_task(self, task_name, args=None, kwargs=None):
-        # task_name can be either task_name or Task instance.
+        # task_name can be either the name of a task or a Task instance.
         if isinstance(task_name, Task):
             task = task_name
             task_name = task.task_name
-            args = []     # when we have a Task instance we don't care about args and kwargs here
-            kwargs = {}   # kept for backward compatibility
+            # When we have a Task instance we do not need args and kwargs, but they are kept for backward compatibility
+            args = []
+            kwargs = {}
         else:
             task = None
         proxy_task = self._tasks[task_name]

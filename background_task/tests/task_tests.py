@@ -1,8 +1,6 @@
-import unittest
-from django.test import TransactionTestCase
+from django.test import TestCase
 from django.conf import settings
 from django.utils import timezone
-import random
 
 from datetime import timedelta, datetime
 
@@ -25,7 +23,7 @@ def record_task(*arg, **kw):
     _recorded.append((arg, kw))
 
 
-class TestBackgroundDecorator(unittest.TestCase):
+class TestBackgroundDecorator(TestCase):
 
     def test_get_proxy(self):
         proxy = tasks.background()(empty_task)
@@ -93,7 +91,7 @@ class TestBackgroundDecorator(unittest.TestCase):
         self.assertEqual(CompletedTask.objects.count(), ct, 'Completed task was created')
 
 
-class TestTaskProxy(unittest.TestCase):
+class TestTaskProxy(TestCase):
 
     def setUp(self):
         super(TestTaskProxy, self).setUp()
@@ -101,7 +99,6 @@ class TestTaskProxy(unittest.TestCase):
 
     def test_run_task(self):
         tasks.run_task(self.proxy.name, [], {})
-        print(self.proxy.name)
         self.assertEqual(((), {}), _recorded.pop())
 
         tasks.run_task(self.proxy.name, ['hi'], {})
@@ -111,7 +108,7 @@ class TestTaskProxy(unittest.TestCase):
         self.assertEqual(((), {'kw': 1}), _recorded.pop())
 
 
-class TestTaskSchedule(unittest.TestCase):
+class TestTaskSchedule(TestCase):
 
     def test_priority(self):
         self.assertEqual(0, TaskSchedule().priority)
@@ -198,7 +195,7 @@ class TestTaskSchedule(unittest.TestCase):
                             repr(TaskSchedule(run_at=10, priority=0)))
 
 
-class TestSchedulingTasks(TransactionTestCase):
+class TestSchedulingTasks(TestCase):
 
     def test_background_gets_scheduled(self):
         self.result = None
@@ -265,7 +262,7 @@ class TestSchedulingTasks(TransactionTestCase):
         self.failUnless(now + timedelta(seconds=1) > task.run_at)
 
 
-class TestTaskRunner(TransactionTestCase):
+class TestTaskRunner(TestCase):
 
     def setUp(self):
         super(TestTaskRunner, self).setUp()
@@ -288,7 +285,7 @@ class TestTaskRunner(TransactionTestCase):
         self.assertEqual('mytask', locked_task.task_name)
 
 
-class TestTaskModel(TransactionTestCase):
+class TestTaskModel(TestCase):
 
     def test_lock_uncontested(self):
         task = Task.objects.new_task('mytask')
@@ -329,7 +326,7 @@ class TestTaskModel(TransactionTestCase):
         self.assertEqual(u'Task(mytask)', unicode(task))
 
 
-class TestTasks(TransactionTestCase):
+class TestTasks(TestCase):
 
     def setUp(self):
         super(TestTasks, self).setUp()
@@ -518,14 +515,12 @@ class TestTasks(TransactionTestCase):
         self.failIf(completed_task.failed_at is None)
 
 
-class MaxAttemptsTestCase(TransactionTestCase):
+class MaxAttemptsTestCase(TestCase):
 
     def setUp(self):
         @tasks.background(name='failing task')
         def failing_task():
             return 0/0
-        CompletedTask.objects.all().delete()
-        Task.objects.all().delete()
         self.failing_task = failing_task
         self.task1 = self.failing_task()
         self.task2 = self.failing_task()
@@ -559,7 +554,7 @@ class MaxAttemptsTestCase(TransactionTestCase):
             self.assertEqual(Task.objects.count(), 2)
             self.assertEqual(CompletedTask.objects.count(), 0)
 
-class ArgumentsWithDictTestCase(unittest.TestCase):
+class ArgumentsWithDictTestCase(TestCase):
     def setUp(self):
         @tasks.background(name='failing task')
         def task(d):
@@ -568,10 +563,8 @@ class ArgumentsWithDictTestCase(unittest.TestCase):
 
     def test_task_with_dictionary_in_args(self):
         self.assertEqual(Task.objects.count(), 0)
-
-        d = {random.randint(1,1000):random.randint(1,1000) for _ in range(random.randint(1,10))}
+        d = {22222:2, 11111:1}
         self.task(d)
-        self.assertEqual(Task.objects.count(), 1, 'Task dont created')
-
+        self.assertEqual(Task.objects.count(), 1)
         tasks.run_next_task()
-        self.assertEqual(Task.objects.count(), 0, 'Task dont started')
+        self.assertEqual(Task.objects.count(), 0)
