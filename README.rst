@@ -21,24 +21,17 @@ There are two parts to using background tasks:
 Installation
 ============
 
-1. Install from PyPI::
+Install from PyPI::
 
     pip install django-background-tasks
 
-2. Add to INSTALLED_APPS::
+Add to INSTALLED_APPS::
 
     INSTALLED_APPS = (
         # ...
         'background_task',
         # ...
     )
-
-(3.) Autodiscover tasks in your apps' ``tasks.py`` file. Add the following to your base ``urls.py`` so that autodiscover runs when your project starts up::
-
-    from background_task import tasks
-    tasks.autodiscover()
-    
-Do this in case you are not using the management command to execute the tasks.
 
 
 Supported versions and compatibility
