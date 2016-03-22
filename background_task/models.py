@@ -84,7 +84,7 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         if run_at is None:
             run_at = timezone.now()
 
-        task_params = json.dumps((args, kwargs))
+        task_params = json.dumps((args, kwargs), sort_keys=True)
         s = "%s%s" % (task_name, task_params)
         task_hash = sha1(s.encode('utf-8')).hexdigest()
         return Task(task_name=task_name,
@@ -96,7 +96,7 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
     def get_task(self, task_name, args=None, kwargs=None):
         args = args or ()
         kwargs = kwargs or {}
-        task_params = json.dumps((args, kwargs))
+        task_params = json.dumps((args, kwargs), sort_keys=True)
         s = "%s%s" % (task_name, task_params)
         task_hash = sha1(s.encode('utf-8')).hexdigest()
         qs = self.get_queryset()
