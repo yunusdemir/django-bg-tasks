@@ -64,9 +64,11 @@ else:
         
 class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
     
-    def find_available(self):
+    def find_available(self, queue=None):
         now = timezone.now()
         qs = self.unlocked(now)
+        if queue:
+            qs = qs.filter(queue=queue)
         ready = qs.filter(run_at__lte=now, failed_at=None)
         return ready.order_by('-priority', 'run_at')
 
@@ -78,7 +80,7 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         return qs.filter(unlocked)
 
     def new_task(self, task_name, args=None, kwargs=None,
-                 run_at=None, priority=0):
+                 run_at=None, priority=0, queue=None):
         args = args or ()
         kwargs = kwargs or {}
         if run_at is None:
@@ -91,7 +93,8 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
                     task_params=task_params,
                     task_hash=task_hash,
                     priority=priority,
-                    run_at=run_at)
+                    run_at=run_at,
+                    queue=queue)
 
     def get_task(self, task_name, args=None, kwargs=None):
         args = args or ()
@@ -118,6 +121,10 @@ class Task(models.Model):
     priority = models.IntegerField(default=0, db_index=True)
     # when the task should be run
     run_at = models.DateTimeField(db_index=True)
+
+    # the "name" of the queue this is to be run on
+    queue = models.CharField(max_length=255, db_index=True,
+                             null=True, blank=True)
 
     # how many times the task has been tried
     attempts = models.IntegerField(default=0, db_index=True)
@@ -193,6 +200,7 @@ class Task(models.Model):
             task_hash=self.task_hash,
             priority=self.priority,
             run_at=timezone.now(),
+            queue=self.queue,
             attempts=self.attempts,
             failed_at=self.failed_at,
             last_error=self.last_error,

@@ -16,6 +16,10 @@ class CompletedTask(models.Model):
     # when the task should be run
     run_at = models.DateTimeField(db_index=True)
 
+    # the "name" of the queue this is to be run on
+    queue = models.CharField(max_length=255, db_index=True,
+                             null=True, blank=True)
+
     # how many times the task has been tried
     attempts = models.IntegerField(default=0, db_index=True)
     # when the task last failed

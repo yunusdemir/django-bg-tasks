@@ -23,6 +23,10 @@ class Command(BaseCommand):
                 type='float',
                 default=5.0,
                 help='Sleep for this many seconds before checking for new tasks (if none were found) - default is 5'),
+            make_option('--queue',
+                action='store',
+                dest='queue',
+                help='Only process tasks on this named queue'),
             make_option('--log-file',
                 action='store',
                 dest='log_file',
@@ -75,6 +79,7 @@ class Command(BaseCommand):
         log_std = options.pop('log_std', False)
         duration = options.pop('duration', 0)
         sleep = options.pop('sleep', 5.0)
+        queue = options.pop('queue', None)
         
         self._configure_logging(log_level, log_file, log_std)
         
@@ -83,6 +88,6 @@ class Command(BaseCommand):
         start_time = time.time()
         
         while (duration <= 0) or (time.time() - start_time) <= duration:
-            if not self._tasks.run_next_task():
+            if not self._tasks.run_next_task(queue):
                 logging.debug('waiting for tasks')
                 time.sleep(sleep)
