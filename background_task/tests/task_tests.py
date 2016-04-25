@@ -554,6 +554,7 @@ class MaxAttemptsTestCase(TestCase):
             self.assertEqual(Task.objects.count(), 2)
             self.assertEqual(CompletedTask.objects.count(), 0)
 
+
 class ArgumentsWithDictTestCase(TestCase):
     def setUp(self):
         @tasks.background(name='failing task')
@@ -568,3 +569,30 @@ class ArgumentsWithDictTestCase(TestCase):
         self.assertEqual(Task.objects.count(), 1)
         tasks.run_next_task()
         self.assertEqual(Task.objects.count(), 0)
+
+
+completed_named_queue_tasks = []
+
+
+@background(queue='named_queue')
+def named_queue_task(message):
+    completed_named_queue_tasks.append(message)
+
+
+class NamedQueueTestCase(TestCase):
+
+    def test_process_queue(self):
+        named_queue_task('test1')
+        tasks.run_next_task(queue='named_queue')
+        self.assertIn('test1', completed_named_queue_tasks, msg='Task should be processed')
+
+    def test_process_all_tasks(self):
+        named_queue_task('test2')
+        tasks.run_next_task()
+        self.assertIn('test2', completed_named_queue_tasks, msg='Task should be processed')
+
+    def test_process_other_queue(self):
+        named_queue_task('test3')
+        tasks.run_next_task(queue='other_named_queue')
+        self.assertNotIn('test3', completed_named_queue_tasks, msg='Task should be ignored')
+        tasks.run_next_task()
