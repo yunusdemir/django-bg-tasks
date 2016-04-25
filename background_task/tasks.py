@@ -41,7 +41,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             task_queue = getattr(proxy_task, 'queue', None)
             task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
             if task_queue:
-                task_qs.filter(queue=task_queue)
+                task_qs = task_qs.filter(queue=task_queue)
             if task_qs:
                 task = task_qs[0]
         if func is None:
