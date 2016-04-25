@@ -38,7 +38,10 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             args, kwargs = task.params()
         else:
             task_name = getattr(proxy_task, 'name', None)
+            task_queue = getattr(proxy_task, 'queue', None)
             task_qs = Task.objects.get_task(task_name=task_name, args=args, kwargs=kwargs)
+            if task_queue:
+                task_qs = task_qs.filter(queue=task_queue)
             if task_qs:
                 task = task_qs[0]
         if func is None:
@@ -69,7 +72,7 @@ class Tasks(object):
         self._task_proxy_class = TaskProxy
         self._bg_runner = bg_runner
 
-    def background(self, name=None, schedule=None):
+    def background(self, name=None, schedule=None, queue=None):
         '''
         decorator to turn a regular function into
         something that gets run asynchronously in
@@ -87,7 +90,7 @@ class Tasks(object):
             _name = name
             if not _name:
                 _name = '%s.%s' % (fn.__module__, fn.__name__)
-            proxy = self._task_proxy_class(_name, fn, schedule, self._runner)
+            proxy = self._task_proxy_class(_name, fn, schedule, queue, self._runner)
             self._tasks[_name] = proxy
             return proxy
         if fn:
@@ -111,8 +114,8 @@ class Tasks(object):
             curr_thread.start()
         else:
             self._bg_runner(proxy_task, task, *args, **kwargs)
-    def run_next_task(self):
-        return self._runner.run_next_task(self)
+    def run_next_task(self, queue=None):
+        return self._runner.run_next_task(self, queue)
 
 
 class TaskSchedule(object):
@@ -189,17 +192,19 @@ class DBTaskRunner(object):
         self.worker_name = str(os.getpid())
 
     def schedule(self, task_name, args, kwargs, run_at=None,
-                       priority=0, action=TaskSchedule.SCHEDULE):
+                       priority=0, action=TaskSchedule.SCHEDULE, queue=None):
         '''Simply create a task object in the database'''
 
         task = Task.objects.new_task(task_name, args, kwargs,
-                                     run_at, priority)
+                                     run_at, priority, queue)
 
         if action != TaskSchedule.SCHEDULE:
             task_hash = task.task_hash
             now = timezone.now()
             unlocked = Task.objects.unlocked(now)
             existing = unlocked.filter(task_hash=task_hash)
+            if queue:
+                existing = existing.filter(queue=queue)
             if action == TaskSchedule.RESCHEDULE_EXISTING:
                 updated = existing.update(run_at=run_at, priority=priority)
                 if updated:
@@ -213,8 +218,8 @@ class DBTaskRunner(object):
         return task
  
     @atomic
-    def get_task_to_run(self, tasks):
-        available_tasks = [task for task in Task.objects.find_available()
+    def get_task_to_run(self, tasks, queue=None):
+        available_tasks = [task for task in Task.objects.find_available(queue)
                            if task.task_name in tasks._tasks][:5]
         for task in available_tasks:
             # try to lock task
@@ -231,10 +236,10 @@ class DBTaskRunner(object):
 
 
     @atomic
-    def run_next_task(self, tasks):
+    def run_next_task(self, tasks, queue=None):
         # we need to commit to make sure
         # we can see new tasks as they arrive
-        task = self.get_task_to_run(tasks)
+        task = self.get_task_to_run(tasks, queue)
         #transaction.commit()
         if task:
             self.run_task(tasks, task)
@@ -245,11 +250,12 @@ class DBTaskRunner(object):
 
 @python_2_unicode_compatible
 class TaskProxy(object):
-    def __init__(self, name, task_function, schedule, runner):
+    def __init__(self, name, task_function, schedule, queue, runner):
         self.name = name
         self.now = self.task_function = task_function
         self.runner = runner
         self.schedule = TaskSchedule.create(schedule)
+        self.queue = queue
 
     def __call__(self, *args, **kwargs):
         schedule = kwargs.pop('schedule', None)
@@ -257,7 +263,8 @@ class TaskProxy(object):
         run_at = schedule.run_at
         priority = schedule.priority
         action = schedule.action
-        return self.runner.schedule(self.name, args, kwargs, run_at, priority, action)
+        queue = kwargs.pop('queue', self.queue)
+        return self.runner.schedule(self.name, args, kwargs, run_at, priority, action, queue)
 
     def __str__(self):
         return 'TaskProxy(%s)' % self.name
