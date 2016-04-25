@@ -10,5 +10,6 @@ Contributors
 * Grant McConnaughey (grantmcconnaughey)
 * James Mason (bear454)
 * Pavel Zagrebelin (Zagrebelin)
+* Stephen Brown (december1981)
 
 Your name could stand here :)
