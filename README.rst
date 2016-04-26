@@ -74,6 +74,16 @@ Also you can run original function right now in synchronous mode::
     notify_user = notify_user.now   # revert task function back to normal function. Useful for testing.
 
 
+Multiple Queues
+===============
+You can pass a queue name to the `background` decorator::
+
+    @background(queue='my-queue')
+    def notify_user(user_id):
+        ...
+
+If you run the command ``process_tasks`` with the option ``--queue <queue_name>`` you can restrict the tasks processed to the given queue.
+
 
 Running tasks
 =============
