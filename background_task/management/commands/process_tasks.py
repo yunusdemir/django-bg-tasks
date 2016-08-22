@@ -1,47 +1,64 @@
 from django.core.management.base import BaseCommand
+from django import VERSION
 import time
-from optparse import make_option
 import logging
 import sys
 
 from background_task.tasks import tasks, autodiscover
 
+
 class Command(BaseCommand):
-    LOG_LEVELS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
-    
     help = 'Run tasks that are scheduled to run on the queue'
-    option_list = BaseCommand.option_list + (
-            make_option('--duration',
-                action='store',
-                dest='duration',
-                type='int',
-                default=0,
-                help='Run task for this many seconds (0 or less to run forever) - default is 0'),
-            make_option('--sleep',
-                action='store',
-                dest='sleep',
-                type='float',
-                default=5.0,
-                help='Sleep for this many seconds before checking for new tasks (if none were found) - default is 5'),
-            make_option('--queue',
-                action='store',
-                dest='queue',
-                help='Only process tasks on this named queue'),
-            make_option('--log-file',
-                action='store',
-                dest='log_file',
-                help='Log file destination'),
-            make_option('--log-std',
-                action='store_true',
-                dest='log_std',
-                help='Redirect stdout and stderr to the logging system'),            
-            make_option('--log-level',
-                action='store',
-                type='choice',
-                choices=LOG_LEVELS,
-                dest='log_level',
-                help='Set logging level (%s)' % ', '.join(LOG_LEVELS)),
-            )
+
+    LOG_LEVELS = ['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']
+
+    # Command options are specified in an abstract way to enable Django < 1.8 compatibility
+    OPTIONS = (
+        (('--duration', ), {
+            'action': 'store',
+            'dest': 'duration',
+            'type': int,
+            'default': 0,
+            'help': 'Run task for this many seconds (0 or less to run forever) - default is 0',
+        }),
+        (('--sleep', ), {
+            'action': 'store',
+            'dest': 'sleep',
+            'type': float,
+            'default': 5.0,
+            'help': 'Sleep for this many seconds before checking for new tasks (if none were found) - default is 5',
+        }),
+        (('--queue', ), {
+            'action': 'store',
+            'dest': 'queue',
+            'help': 'Only process tasks on this named queue',
+        }),
+        (('--log-file', ), {
+            'action': 'store',
+            'dest': 'queue',
+            'help': 'Only process tasks on this named queue',
+        }),
+        (('--log-std', ), {
+            'action': 'store',
+            'dest': 'log_file',
+            'help': 'Log file destination',
+        }),
+        (('--log-level', ), {
+            'action': 'store',
+            'choices': LOG_LEVELS,
+            'dest': 'log_level',
+            'help': 'Set logging level (%s)' % ', '.join(LOG_LEVELS),
+        }),
+    )
+
+    if VERSION < (1, 8):
+        from optparse import make_option
+        option_list = BaseCommand.option_list + tuple([make_option(*args, **kwargs) for args, kwargs in OPTIONS])
+
+    # Used in Django >= 1.8
+    def add_arguments(self, parser):
+        for (args, kwargs) in self.OPTIONS:
+            parser.add_argument(*args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
