@@ -37,7 +37,7 @@ Add to INSTALLED_APPS::
 Supported versions and compatibility
 ====================================
 * Python: 2 & 3
-* Django: 1.4 - 1.8
+* Django: 1.4–1.10
 
 Full Django LTS to LTS compatibility through django-compat_.
 
