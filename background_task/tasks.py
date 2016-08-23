@@ -280,7 +280,7 @@ def autodiscover():
     for app in settings.INSTALLED_APPS:
         try:
             app_path = import_module(app).__path__
-        except AttributeError:
+        except (AttributeError, ImportError):
             continue
         try:
             imp.find_module('tasks', app_path)
