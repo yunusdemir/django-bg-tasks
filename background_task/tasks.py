@@ -273,7 +273,10 @@ tasks = Tasks()
 
 
 def autodiscover():
-    '''autodiscover tasks.py files in much the same way as admin app'''
+    """
+    Autodiscover tasks.py files in much the same way as admin app
+    TODO: Is this code needed? Seems to be legacy code
+    """
     import imp
     from django.conf import settings
 

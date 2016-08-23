@@ -94,8 +94,6 @@ There is a management command to run tasks that have been scheduled::
 
 This will simply poll the database queue every few seconds to see if there is a new task to run.
 
-NB: to aid the management task in finding the registered tasks it is best to put them in a file called 'tasks.py'.  You can put them elsewhere, but you have to ensure that they will be imported so the decorator can register them with the scheduler.  By putting them in tasks.py they will be auto-discovered and the file automatically imported by the management command.
-
 The process_tasks management command has the following options:
 
 * `duration` - Run task for this many seconds (0 or less to run forever) - default is 0
