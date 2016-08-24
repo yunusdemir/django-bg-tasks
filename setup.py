@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+import codecs
 
 version = __import__('background_task').__version__
 
@@ -8,7 +9,7 @@ setup(
     name='django-background-tasks',
     version=version,
     description='Database backed asynchronous task queue',
-    long_description=open('README.rst').read(),
+    long_description=codecs.open('README.rst', encoding='utf-8').read(),
     author='arteria GmbH, John Montgomery',
     author_email='admin@arteria.ch',
     url='http://github.com/arteria/django-background-tasks',
