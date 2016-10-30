@@ -35,13 +35,13 @@ class Command(BaseCommand):
         }),
         (('--log-file', ), {
             'action': 'store',
-            'dest': 'queue',
-            'help': 'Only process tasks on this named queue',
-        }),
-        (('--log-std', ), {
-            'action': 'store',
             'dest': 'log_file',
             'help': 'Log file destination',
+        }),
+        (('--log-std', ), {
+            'action': 'store_true',
+            'dest': 'log_std',
+            'help': 'Redirect stdout and stderr to the logging system',
         }),
         (('--log-level', ), {
             'action': 'store',
