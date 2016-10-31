@@ -1,4 +1,0 @@
-nose
-django-nose
-django-compat>=1.0.13
-six

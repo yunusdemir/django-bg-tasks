@@ -1,30 +1,29 @@
-import sys
-
+# -*- coding: utf-8 -*-
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
-DATABASE_ENGINE = 'sqlite3'
-DATABASE_NAME = ':memory:'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.%s' % DATABASE_ENGINE,
-        'NAME': DATABASE_NAME,
-        'USER': '',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+        'TEST':  # This will force django to create a real sqlite database on
+                 # the disk, instead of creating it in memory.
+                 # We need this to test the async behavior.
+            {
+                'NAME': 'test_db',
+            },
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
     }
 }
 
-
-INSTALLED_APPS = ['background_task', ]
-
-
-if 'test_coverage' in sys.argv:
-    # http://pypi.python.org/pypi/django-coverage
-    INSTALLED_APPS.append('django_coverage')
-    COVERAGE_REPORT_HTML_OUTPUT_DIR = 'html_coverage'
-    COVERAGE_MODULE_EXCLUDES = []
+INSTALLED_APPS = [
+    'background_task',
+]
 
 SECRET_KEY = 'foo'
 
 USE_TZ = True
-BACKGROUND_TASK_RUN_ASYNC = False # Note: tests wont pass in async mode!
+BACKGROUND_TASK_RUN_ASYNC = False

@@ -1,18 +1,47 @@
-from django.test import TestCase
+# -*- coding: utf-8 -*-
+import sys
+import time
+from datetime import timedelta, datetime
+
+from django.test.testcases import TransactionTestCase
 from django.conf import settings
 from django.utils import timezone
 
-from datetime import timedelta, datetime
-
-import sys
-if sys.version_info >= (3, 0):
-    unicode = str
-
-from background_task.tasks import tasks, TaskSchedule, TaskProxy
+from background_task.tasks import tasks, TaskSchedule, TaskProxy, BACKGROUND_TASK_RUN_ASYNC
 from background_task.models import Task, CompletedTask
 from background_task import background
 
+if sys.version_info >= (3, 0):
+    unicode = str
+
 _recorded = []
+
+
+def mocked_run_task(name, args=None, kwargs=None):
+    """
+    We mock tasks.run_task to give other threads some time to update the database.
+
+    Otherwise we run into a locked database.
+    """
+    val = tasks.run_task(name, args, kwargs)
+    if BACKGROUND_TASK_RUN_ASYNC:
+        time.sleep(1)
+    return val
+
+
+def mocked_run_next_task(queue=None):
+    """
+    We mock tasks.mocked_run_next_task to give other threads some time to update the database.
+
+    Otherwise we run into a locked database.
+    """
+    val = tasks.run_next_task(queue)
+    if BACKGROUND_TASK_RUN_ASYNC:
+        time.sleep(1)
+    return val
+
+run_task = mocked_run_task
+run_next_task = mocked_run_next_task
 
 
 def empty_task():
@@ -23,7 +52,7 @@ def record_task(*arg, **kw):
     _recorded.append((arg, kw))
 
 
-class TestBackgroundDecorator(TestCase):
+class TestBackgroundDecorator(TransactionTestCase):
 
     def test_get_proxy(self):
         proxy = tasks.background()(empty_task)
@@ -37,15 +66,15 @@ class TestBackgroundDecorator(TestCase):
 
     def test_default_name(self):
         proxy = tasks.background()(empty_task)
-        self.assertEqual(proxy.name, 'background_task.tests.task_tests.empty_task')
+        self.assertEqual(proxy.name, 'tests.test_tasks.empty_task')
 
         proxy = tasks.background()(record_task)
-        self.assertEqual(proxy.name, 'background_task.tests.task_tests.record_task')
+        self.assertEqual(proxy.name, 'tests.test_tasks.record_task')
 
         proxy = tasks.background(empty_task)
         # print proxy
         self.assertTrue(isinstance(proxy, TaskProxy))
-        self.assertEqual(proxy.name, 'background_task.tests.task_tests.empty_task')
+        self.assertEqual(proxy.name, 'tests.test_tasks.empty_task')
 
     def test_specified_name(self):
         proxy = tasks.background(name='mytask')(empty_task)
@@ -68,8 +97,10 @@ class TestBackgroundDecorator(TestCase):
 
     def test__unicode__(self):
         proxy = tasks.background()(empty_task)
-        self.assertEqual(u'TaskProxy(background_task.tests.task_tests.empty_task)',
-                             unicode(proxy))
+        self.assertEqual(
+            u'TaskProxy(tests.test_tasks.empty_task)',
+            unicode(proxy)
+        )
 
     def test_shortcut(self):
         '''check shortcut to decorator works'''
@@ -81,7 +112,7 @@ class TestBackgroundDecorator(TestCase):
         ''' Check launch original function in synchronous mode '''
         @background
         def add(x, y):
-            return x+y
+            return x + y
 
         t = Task.objects.count()
         ct = CompletedTask.objects.count()
@@ -91,24 +122,24 @@ class TestBackgroundDecorator(TestCase):
         self.assertEqual(CompletedTask.objects.count(), ct, 'Completed task was created')
 
 
-class TestTaskProxy(TestCase):
+class TestTaskProxy(TransactionTestCase):
 
     def setUp(self):
         super(TestTaskProxy, self).setUp()
         self.proxy = tasks.background()(record_task)
 
     def test_run_task(self):
-        tasks.run_task(self.proxy.name, [], {})
+        run_task(self.proxy.name, [], {})
         self.assertEqual(((), {}), _recorded.pop())
 
-        tasks.run_task(self.proxy.name, ['hi'], {})
+        run_task(self.proxy.name, ['hi'], {})
         self.assertEqual((('hi',), {}), _recorded.pop())
 
-        tasks.run_task(self.proxy.name, [], {'kw': 1})
+        run_task(self.proxy.name, [], {'kw': 1})
         self.assertEqual(((), {'kw': 1}), _recorded.pop())
 
 
-class TestTaskSchedule(TestCase):
+class TestTaskSchedule(TransactionTestCase):
 
     def test_priority(self):
         self.assertEqual(0, TaskSchedule().priority)
@@ -195,7 +226,7 @@ class TestTaskSchedule(TestCase):
                             repr(TaskSchedule(run_at=10, priority=0)))
 
 
-class TestSchedulingTasks(TestCase):
+class TestSchedulingTasks(TransactionTestCase):
 
     def test_background_gets_scheduled(self):
         self.result = None
@@ -262,7 +293,7 @@ class TestSchedulingTasks(TestCase):
         self.failUnless(now + timedelta(seconds=1) > task.run_at)
 
 
-class TestTaskRunner(TestCase):
+class TestTaskRunner(TransactionTestCase):
 
     def setUp(self):
         super(TestTaskRunner, self).setUp()
@@ -285,7 +316,7 @@ class TestTaskRunner(TestCase):
         self.assertEqual('mytask', locked_task.task_name)
 
 
-class TestTaskModel(TestCase):
+class TestTaskModel(TransactionTestCase):
 
     def test_lock_uncontested(self):
         task = Task.objects.new_task('mytask')
@@ -326,7 +357,7 @@ class TestTaskModel(TestCase):
         self.assertEqual(u'Task(mytask)', unicode(task))
 
 
-class TestTasks(TestCase):
+class TestTasks(TransactionTestCase):
 
     def setUp(self):
         super(TestTasks, self).setUp()
@@ -347,13 +378,13 @@ class TestTasks(TestCase):
         self.throws_error = throws_error
 
     def test_run_next_task_nothing_scheduled(self):
-        self.failIf(tasks.run_next_task())
+        self.failIf(run_next_task())
 
     def test_run_next_task_one_task_scheduled(self):
         self.set_fields(worked=True)
         self.failIf(hasattr(self, 'worked'))
 
-        self.failUnless(tasks.run_next_task())
+        self.failUnless(run_next_task())
 
         self.failUnless(hasattr(self, 'worked'))
         self.failUnless(self.worked)
@@ -364,9 +395,9 @@ class TestTasks(TestCase):
         self.set_fields(three='3')
 
         for i in range(3):
-            self.failUnless(tasks.run_next_task())
+            self.failUnless(run_next_task())
 
-        self.failIf(tasks.run_next_task())  # everything should have been run
+        self.failIf(run_next_task())  # everything should have been run
 
         for field, value in [('one', '1'), ('two', '2'), ('three', '3')]:
             self.failUnless(hasattr(self, field))
@@ -380,7 +411,7 @@ class TestTasks(TestCase):
         original_task = all_tasks[0]
 
         # should run, but trigger error
-        self.failUnless(tasks.run_next_task())
+        self.failUnless(run_next_task())
 
         all_tasks = Task.objects.all()
         self.assertEqual(1, all_tasks.count())
@@ -406,7 +437,7 @@ class TestTasks(TestCase):
         original_task = all_tasks[0]
         original_task.lock('lockname')
 
-        self.failIf(tasks.run_next_task())
+        self.failIf(run_next_task())
 
         self.failIf(hasattr(self, 'locked'))
         all_tasks = Task.objects.all()
@@ -420,7 +451,7 @@ class TestTasks(TestCase):
         original_task = all_tasks[0]
         locked_task = original_task.lock('lockname')
 
-        self.failIf(tasks.run_next_task())
+        self.failIf(run_next_task())
 
         self.failIf(hasattr(self, 'lock_overridden'))
 
@@ -431,7 +462,7 @@ class TestTasks(TestCase):
 
         # so now we should be able to override the lock
         # and run the task
-        self.failUnless(tasks.run_next_task())
+        self.failUnless(run_next_task())
         self.assertEqual(0, Task.objects.count())
 
         self.failUnless(hasattr(self, 'lock_overridden'))
@@ -503,7 +534,7 @@ class TestTasks(TestCase):
 
         # task should be scheduled to run now
         # but will be marked as failed straight away
-        self.failUnless(tasks.run_next_task())
+        self.failUnless(run_next_task())
 
         available = Task.objects.find_available()
         self.assertEqual(0, available.count())
@@ -515,12 +546,13 @@ class TestTasks(TestCase):
         self.failIf(completed_task.failed_at is None)
 
 
-class MaxAttemptsTestCase(TestCase):
+class MaxAttemptsTestCase(TransactionTestCase):
 
     def setUp(self):
         @tasks.background(name='failing task')
         def failing_task():
-            return 0/0
+            raise Exception("error")
+            # return 0 / 0
         self.failing_task = failing_task
         self.task1 = self.failing_task()
         self.task2 = self.failing_task()
@@ -532,7 +564,7 @@ class MaxAttemptsTestCase(TestCase):
             self.assertEqual(settings.MAX_ATTEMPTS, 1)
             self.assertEqual(Task.objects.count(), 2)
 
-            tasks.run_next_task()
+            run_next_task()
             self.assertEqual(Task.objects.count(), 1)
             self.assertEqual(Task.objects.all()[0].id, self.task2_id)
             self.assertEqual(CompletedTask.objects.count(), 1)
@@ -543,19 +575,19 @@ class MaxAttemptsTestCase(TestCase):
             self.assertIsNotNone(completed_task.last_error)
             self.assertIsNotNone(completed_task.failed_at)
 
-            tasks.run_next_task()
+            run_next_task()
             self.assertEqual(Task.objects.count(), 0)
             self.assertEqual(CompletedTask.objects.count(), 2)
 
     def test_max_attempts_two(self):
         with self.settings(MAX_ATTEMPTS=2):
             self.assertEqual(settings.MAX_ATTEMPTS, 2)
-            tasks.run_next_task()
+            run_next_task()
             self.assertEqual(Task.objects.count(), 2)
             self.assertEqual(CompletedTask.objects.count(), 0)
 
 
-class ArgumentsWithDictTestCase(TestCase):
+class ArgumentsWithDictTestCase(TransactionTestCase):
     def setUp(self):
         @tasks.background(name='failing task')
         def task(d):
@@ -564,10 +596,10 @@ class ArgumentsWithDictTestCase(TestCase):
 
     def test_task_with_dictionary_in_args(self):
         self.assertEqual(Task.objects.count(), 0)
-        d = {22222:2, 11111:1}
+        d = {22222: 2, 11111: 1}
         self.task(d)
         self.assertEqual(Task.objects.count(), 1)
-        tasks.run_next_task()
+        run_next_task()
         self.assertEqual(Task.objects.count(), 0)
 
 
@@ -579,20 +611,20 @@ def named_queue_task(message):
     completed_named_queue_tasks.append(message)
 
 
-class NamedQueueTestCase(TestCase):
+class NamedQueueTestCase(TransactionTestCase):
 
     def test_process_queue(self):
         named_queue_task('test1')
-        tasks.run_next_task(queue='named_queue')
+        run_next_task(queue='named_queue')
         self.assertIn('test1', completed_named_queue_tasks, msg='Task should be processed')
 
     def test_process_all_tasks(self):
         named_queue_task('test2')
-        tasks.run_next_task()
+        run_next_task()
         self.assertIn('test2', completed_named_queue_tasks, msg='Task should be processed')
 
     def test_process_other_queue(self):
         named_queue_task('test3')
-        tasks.run_next_task(queue='other_named_queue')
+        run_next_task(queue='other_named_queue')
         self.assertNotIn('test3', completed_named_queue_tasks, msg='Task should be ignored')
-        tasks.run_next_task()
+        run_next_task()

@@ -1,32 +1,28 @@
 #!/usr/bin/env python
-"""
-This script is a trick to setup a fake Django environment, since this reusable
-app will be developed and tested outside any specifiv Django project.
-
-Via ``settings.configure`` you will be able to set all necessary settings
-for your app and run the tests as if you were calling ``./manage.py test``.
-
-"""
+import os
 import sys
 
+import django
 from django.conf import settings
-
-from background_task.tests import test_settings
-
-if not settings.configured:
-    settings.configure(**test_settings.__dict__)
-
-from django_nose import NoseTestSuiteRunner
+from django.test.utils import get_runner
+from argparse import ArgumentParser
 
 
-def runtests(*test_args):
-    import django
-    if django.VERSION >= (1, 7):
-        django.setup()
-    failures = NoseTestSuiteRunner(verbosity=2,
-                                      interactive=True).run_tests(test_args)
-    sys.exit(failures)
+def main(argv):
+    parser = ArgumentParser()
+    parser.add_argument("--async", "-a", action="store_true", default=False,
+                        help="just build, do not run any tests")
+    args = parser.parse_args(argv)
 
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.test_settings'
+    if args.async:
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.test_settings_async'
 
-if __name__ == '__main__':
-    runtests(*sys.argv[1:])
+    django.setup()
+    TestRunner = get_runner(settings)
+    test_runner = TestRunner()
+    failures = test_runner.run_tests(["tests"])
+    sys.exit(bool(failures))
+
+if __name__ == "__main__":
+    main(argv=sys.argv[1:])
