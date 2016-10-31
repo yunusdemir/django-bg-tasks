@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-from django.utils.datetime_safe import strftime
-from django.utils.timezone import localtime
 
 
 class CompletedTask(models.Model):

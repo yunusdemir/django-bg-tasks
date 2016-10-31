@@ -1,9 +1,10 @@
-from django.core.management.base import BaseCommand
-from django import VERSION
-import time
 # -*- coding: utf-8 -*-
 import logging
 import sys
+import time
+
+from django import VERSION
+from django.core.management.base import BaseCommand
 
 from background_task.tasks import tasks, autodiscover
 
@@ -65,18 +66,17 @@ class Command(BaseCommand):
         super(Command, self).__init__(*args, **kwargs)
         self._tasks = tasks
 
-    
     def _configure_logging(self, log_level, log_file, log_std):
 
         if log_level:
             log_level = getattr(logging, log_level)
-        
+
         config = {}
         if log_level:
             config['level'] = log_level
         if log_file:
             config['filename'] = log_file
-        
+
         if config:
             logging.basicConfig(**config)
 
@@ -84,13 +84,13 @@ class Command(BaseCommand):
             class StdOutWrapper(object):
                 def write(self, s):
                     logging.info(s)
+
             class StdErrWrapper(object):
                 def write(self, s):
                     logging.error(s)
             sys.stdout = StdOutWrapper()
             sys.stderr = StdErrWrapper()
 
-    
     def handle(self, *args, **options):
         log_level = options.pop('log_level', None)
         log_file = options.pop('log_file', None)
@@ -98,13 +98,13 @@ class Command(BaseCommand):
         duration = options.pop('duration', 0)
         sleep = options.pop('sleep', 5.0)
         queue = options.pop('queue', None)
-        
+
         self._configure_logging(log_level, log_file, log_std)
-        
+
         autodiscover()
-        
+
         start_time = time.time()
-        
+
         while (duration <= 0) or (time.time() - start_time) <= duration:
             if not self._tasks.run_next_task(queue):
                 logging.debug('waiting for tasks')

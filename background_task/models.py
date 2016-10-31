@@ -8,7 +8,7 @@ import inspect
 
 
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from hashlib import sha1
 import traceback
@@ -19,10 +19,9 @@ import json
 from background_task.models_completed import CompletedTask
 from background_task.signals import task_failed, task_rescheduled
 
- 
 
 # inspired by http://github.com/tobi/delayed_job
-# 
+#
 
 # Django 1.6 renamed Manager's get_query_set to get_queryset, and the old
 # function will be removed entirely in 1.8. We work back to 1.4, so use a
@@ -32,9 +31,9 @@ from background_task.signals import task_failed, task_rescheduled
 try:
     from django.utils import six
 except ImportError:  # Django < 1.4.2
-    import six 
-    
-    
+    import six
+
+
 if django.get_version() < '1.6':
     class GetQuerySetMetaclass(type):
         def __new__(cls, name, bases, attrs):
@@ -61,10 +60,10 @@ elif django.get_version() < '1.8':
 else:
     class GetQuerySetMetaclass(type):
         pass
-        
-        
+
+
 class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
-    
+
     def find_available(self, queue=None):
         now = timezone.now()
         qs = self.unlocked(now)
@@ -108,6 +107,7 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
 
     def drop_task(self, task_name, args=None, kwargs=None):
         return self.get_task(task_name, args, kwargs).delete()
+
 
 @python_2_unicode_compatible
 class Task(models.Model):

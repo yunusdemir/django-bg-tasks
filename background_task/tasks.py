@@ -1,33 +1,29 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from datetime import datetime, timedelta
+import logging
+import os
+import sys
+import threading
 
 from django.utils.encoding import python_2_unicode_compatible
-from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
-import django
-
-import os
-import logging
-import sys
-from datetime import datetime, timedelta
 
 from compat import atomic
 from compat import import_module
 
 from background_task.exceptions import BackgroundTaskError
 from background_task.models import Task
-from background_task.models import CompletedTask
 from background_task.signals import task_created, task_error, task_successful
 
-import threading
 
 logger = logging.getLogger(__name__)
 
 
 BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False)
- 
-   
+
+
 def bg_runner(proxy_task, task=None, *args, **kwargs):
     """
     Executes the function attached to task. Used to enable threads.
@@ -48,7 +44,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
         if func is None:
             raise BackgroundTaskError("Function is None, can't execute!")
         func(*args, **kwargs)
-        
+
         if task:
             # task done, so can delete it
             task.increment_attempts()
@@ -56,7 +52,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             task_successful.send(sender=task.__class__, task_id=task.id, completed_task=completed)
             task.delete()
             logging.info('Ran task and deleting %s', task)
-        
+
     except Exception as ex:
         t, e, traceback = sys.exc_info()
         if task:
@@ -64,8 +60,8 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             task_error.send(sender=ex.__class__, task=task)
             task.reschedule(t, e, traceback)
         del traceback
-        
-        
+
+
 class Tasks(object):
     def __init__(self):
         self._tasks = {}
@@ -115,6 +111,7 @@ class Tasks(object):
             curr_thread.start()
         else:
             self._bg_runner(proxy_task, task, *args, **kwargs)
+
     def run_next_task(self, queue=None):
         return self._runner.run_next_task(self, queue)
 
@@ -193,7 +190,7 @@ class DBTaskRunner(object):
         self.worker_name = str(os.getpid())
 
     def schedule(self, task_name, args, kwargs, run_at=None,
-                       priority=0, action=TaskSchedule.SCHEDULE, queue=None):
+                 priority=0, action=TaskSchedule.SCHEDULE, queue=None):
         '''Simply create a task object in the database'''
 
         task = Task.objects.new_task(task_name, args, kwargs,
@@ -217,7 +214,7 @@ class DBTaskRunner(object):
         task.save()
         task_created.send(sender=self.__class__, task=task)
         return task
- 
+
     @atomic
     def get_task_to_run(self, tasks, queue=None):
         available_tasks = [task for task in Task.objects.find_available(queue)
@@ -229,25 +226,24 @@ class DBTaskRunner(object):
                 return locked_task
         return None
 
-
     @atomic
     def run_task(self, tasks, task):
         logging.info('Running %s', task)
         tasks.run_task(task)
-
 
     @atomic
     def run_next_task(self, tasks, queue=None):
         # we need to commit to make sure
         # we can see new tasks as they arrive
         task = self.get_task_to_run(tasks, queue)
-        #transaction.commit()
+        # transaction.commit()
         if task:
             self.run_task(tasks, task)
-            #transaction.commit()
+            # transaction.commit()
             return True
         else:
             return False
+
 
 @python_2_unicode_compatible
 class TaskProxy(object):
