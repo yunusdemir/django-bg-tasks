@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django import VERSION
 import time
+# -*- coding: utf-8 -*-
 import logging
 import sys
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import django.dispatch
 
 task_created = django.dispatch.Signal(providing_args=['task'])
