@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from compat import python_2_unicode_compatible
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
 
@@ -35,6 +37,10 @@ class CompletedTask(models.Model):
     locked_by = models.CharField(max_length=64, db_index=True,
                                  null=True, blank=True)
     locked_at = models.DateTimeField(db_index=True, null=True, blank=True)
+
+    creator_content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
+    creator_object_id = models.PositiveIntegerField(null=True, blank=True)
+    creator = GenericForeignKey('creator_content_type', 'creator_object_id')
 
     def __str__(self):
         return u'{} - {}'.format(

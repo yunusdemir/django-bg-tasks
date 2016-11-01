@@ -3,6 +3,7 @@ import sys
 import time
 from datetime import timedelta, datetime
 
+from django.contrib.auth.models import User
 from django.test.testcases import TransactionTestCase
 from django.conf import settings
 from django.utils import timezone
@@ -355,6 +356,11 @@ class TestTaskModel(TransactionTestCase):
         task = Task.objects.new_task('mytask', verbose_name="My Task")
         self.assertEqual(u'My Task', str(task))
 
+    def test_creator(self):
+        user = User.objects.create_user(username='bob', email='bob@example.com', password='12345')
+        task = Task.objects.new_task('mytask', creator=user)
+        task.save()
+        self.assertEqual(task.creator, user)
 
 class TestTasks(TransactionTestCase):
 

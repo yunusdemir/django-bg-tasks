@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
 from django.conf import settings
@@ -80,7 +82,7 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         return qs.filter(unlocked)
 
     def new_task(self, task_name, args=None, kwargs=None,
-                 run_at=None, priority=0, queue=None, verbose_name=None):
+                 run_at=None, priority=0, queue=None, verbose_name=None, creator=None):
         args = args or ()
         kwargs = kwargs or {}
         if run_at is None:
@@ -96,6 +98,7 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
                     run_at=run_at,
                     queue=queue,
                     verbose_name=verbose_name,
+                    creator=creator,
                     )
 
     def get_task(self, task_name, args=None, kwargs=None):
@@ -142,6 +145,10 @@ class Task(models.Model):
     locked_by = models.CharField(max_length=64, db_index=True,
                                  null=True, blank=True)
     locked_at = models.DateTimeField(db_index=True, null=True, blank=True)
+
+    creator_content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
+    creator_object_id = models.PositiveIntegerField(null=True, blank=True)
+    creator = GenericForeignKey('creator_content_type', 'creator_object_id')
 
     objects = TaskManager()
 
