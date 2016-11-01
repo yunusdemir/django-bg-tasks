@@ -66,15 +66,15 @@ class TestBackgroundDecorator(TransactionTestCase):
 
     def test_default_name(self):
         proxy = tasks.background()(empty_task)
-        self.assertEqual(proxy.name, 'tests.test_tasks.empty_task')
+        self.assertEqual(proxy.name, 'background_task.tests.test_tasks.empty_task')
 
         proxy = tasks.background()(record_task)
-        self.assertEqual(proxy.name, 'tests.test_tasks.record_task')
+        self.assertEqual(proxy.name, 'background_task.tests.test_tasks.record_task')
 
         proxy = tasks.background(empty_task)
         # print proxy
         self.assertTrue(isinstance(proxy, TaskProxy))
-        self.assertEqual(proxy.name, 'tests.test_tasks.empty_task')
+        self.assertEqual(proxy.name, 'background_task.tests.test_tasks.empty_task')
 
     def test_specified_name(self):
         proxy = tasks.background(name='mytask')(empty_task)
@@ -98,7 +98,7 @@ class TestBackgroundDecorator(TransactionTestCase):
     def test__unicode__(self):
         proxy = tasks.background()(empty_task)
         self.assertEqual(
-            u'TaskProxy(tests.test_tasks.empty_task)',
+            u'TaskProxy(background_task.tests.test_tasks.empty_task)',
             unicode(proxy)
         )
 
