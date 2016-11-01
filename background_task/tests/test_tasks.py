@@ -570,6 +570,13 @@ class TestTasks(TransactionTestCase):
         completed_task = CompletedTask.objects.all()[0]
         self.failIf(completed_task.failed_at is None)
 
+    def test_run_task_return_value(self):
+        return_value = self.set_fields(test='test')
+        self.assertEqual(Task.objects.count(), 1)
+        task = Task.objects.first()
+        self.assertEqual(return_value, task)
+        self.assertEqual(return_value.pk, task.pk)
+
 
 class MaxAttemptsTestCase(TransactionTestCase):
 
