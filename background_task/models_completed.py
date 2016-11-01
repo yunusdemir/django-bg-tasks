@@ -10,6 +10,8 @@ class CompletedTask(models.Model):
     # a sha1 hash of the name and params, to lookup already scheduled tasks
     task_hash = models.CharField(max_length=40, db_index=True)
 
+    verbose_name = models.CharField(max_length=255, null=True, blank=True)
+
     # what priority the task has
     priority = models.IntegerField(default=0, db_index=True)
     # when the task should be run
