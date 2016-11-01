@@ -6,12 +6,13 @@ python:
     - "3.5"
 
 env:
-    - DJANGO=django==1.4.* DJANGO_NOSE=django-nose==1.4.3
-    - DJANGO=django==1.6.* DJANGO_NOSE=django-nose==1.4.3
-    - DJANGO=django==1.7.* DJANGO_NOSE=django-nose==1.4.3
-    - DJANGO=django==1.8.* DJANGO_NOSE=django-nose==1.4.4
-    - DJANGO=django==1.9.* DJANGO_NOSE=django-nose==1.4.4
-    - DJANGO=django==1.10.* DJANGO_NOSE=django-nose==1.4.4
+    - DJANGO=django==1.4.*
+    - DJANGO=django==1.6.*
+    - DJANGO=django==1.7.*
+    - DJANGO=django==1.8.*
+    - DJANGO=django==1.8.* TEST_ASYNC=TRUE
+    - DJANGO=django==1.9.*
+    - DJANGO=django==1.10.*
 
 sudo: false
 
@@ -20,20 +21,21 @@ install:
     - pip install -r requirements-test.txt
 
 script:
-    - python runtests.py
+    - if [ "$TEST_ASYNC" = "TRUE" ]; python runtests.py --async; fi
+    - if ! [ "$TEST_ASYNC" = "TRUE" ]; python runtests.py; fi
 
 matrix:
     exclude:
         - python: "3.4"
-          env: DJANGO=django==1.4.* DJANGO_NOSE=django-nose==1.4.3
+          env: DJANGO=django==1.4.*
         - python: "3.5"
-          env: DJANGO=django==1.4.* DJANGO_NOSE=django-nose==1.4.3
+          env: DJANGO=django==1.4.*
         - python: "3.5"
-          env: DJANGO=django==1.6.* DJANGO_NOSE=django-nose==1.4.3
+          env: DJANGO=django==1.6.*
         - python: "3.5"
-          env: DJANGO=django==1.7.* DJANGO_NOSE=django-nose==1.4.3
+          env: DJANGO=django==1.7.*
     allow_failures:
-        - env: DJANGO=django==1.4.* DJANGO_NOSE=django-nose==1.4.3
-        - env: DJANGO=django==1.6.* DJANGO_NOSE=django-nose==1.4.3
-        - env: DJANGO=django==1.7.* DJANGO_NOSE=django-nose==1.4.3
+        - env: DJANGO=django==1.4.*
+        - env: DJANGO=django==1.6.*
+        - env: DJANGO=django==1.7.*
     fast_finish: true
