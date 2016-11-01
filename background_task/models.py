@@ -2,7 +2,6 @@
 from django.db import models
 from django.db.models import Q
 from django.conf import settings
-from django.utils.encoding import python_2_unicode_compatible
 import django
 import inspect
 
@@ -14,6 +13,7 @@ from hashlib import sha1
 import traceback
 import logging
 from compat import StringIO
+from compat import python_2_unicode_compatible
 import json
 
 from background_task.models_completed import CompletedTask
@@ -80,7 +80,7 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         return qs.filter(unlocked)
 
     def new_task(self, task_name, args=None, kwargs=None,
-                 run_at=None, priority=0, queue=None):
+                 run_at=None, priority=0, queue=None, verbose_name=None):
         args = args or ()
         kwargs = kwargs or {}
         if run_at is None:
@@ -94,7 +94,9 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
                     task_hash=task_hash,
                     priority=priority,
                     run_at=run_at,
-                    queue=queue)
+                    queue=queue,
+                    verbose_name=verbose_name,
+                    )
 
     def get_task(self, task_name, args=None, kwargs=None):
         args = args or ()
@@ -219,7 +221,7 @@ class Task(models.Model):
         return super(Task, self).save(*arg, **kw)
 
     def __str__(self):
-        return u'Task(%s)' % self.task_name
+        return u'{}'.format(self.verbose_name or self.task_name)
 
     class Meta:
         db_table = 'background_task'

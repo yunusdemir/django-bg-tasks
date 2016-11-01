@@ -11,9 +11,6 @@ from background_task.tasks import tasks, TaskSchedule, TaskProxy, BACKGROUND_TAS
 from background_task.models import Task, CompletedTask
 from background_task import background
 
-if sys.version_info >= (3, 0):
-    unicode = str
-
 _recorded = []
 
 
@@ -95,11 +92,11 @@ class TestBackgroundDecorator(TransactionTestCase):
         proxy = tasks.background(schedule=10)(empty_task)
         self.assertEqual(TaskSchedule(run_at=10), proxy.schedule)
 
-    def test__unicode__(self):
+    def test_str(self):
         proxy = tasks.background()(empty_task)
         self.assertEqual(
             u'TaskProxy(background_task.tests.test_tasks.empty_task)',
-            unicode(proxy)
+            str(proxy)
         )
 
     def test_shortcut(self):
@@ -352,9 +349,11 @@ class TestTaskModel(TransactionTestCase):
         # now try to get the lock again
         self.failIf(task.lock('otherlock') is None)
 
-    def test__unicode__(self):
+    def test_str(self):
         task = Task.objects.new_task('mytask')
-        self.assertEqual(u'Task(mytask)', unicode(task))
+        self.assertEqual(u'mytask', str(task))
+        task = Task.objects.new_task('mytask', verbose_name="My Task")
+        self.assertEqual(u'My Task', str(task))
 
 
 class TestTasks(TransactionTestCase):

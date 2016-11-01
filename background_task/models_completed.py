@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+from compat import python_2_unicode_compatible
+
 from django.db import models
 
 
+@python_2_unicode_compatible
 class CompletedTask(models.Model):
     # the "name" of the task/function to be run
     task_name = models.CharField(max_length=255, db_index=True)
@@ -33,5 +36,8 @@ class CompletedTask(models.Model):
                                  null=True, blank=True)
     locked_at = models.DateTimeField(db_index=True, null=True, blank=True)
 
-    def __unicode__(self):
-        return u'Task(%s) - %s' % (self.task_name, str(self.run_at))
+    def __str__(self):
+        return u'{} - {}'.format(
+            self.verbose_name or self.task_name,
+            self.run_at,
+        )
