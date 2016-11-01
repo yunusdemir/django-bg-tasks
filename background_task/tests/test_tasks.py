@@ -362,6 +362,26 @@ class TestTaskModel(TransactionTestCase):
         task.save()
         self.assertEqual(task.creator, user)
 
+    def test_create_completed_task(self):
+        task = Task.objects.new_task(
+            task_name='mytask',
+            args=[1],
+            kwargs={'q': 's'},
+            priority=1,
+            queue='myqueue',
+            verbose_name='My Task',
+            creator=User.objects.create_user(username='bob', email='bob@example.com', password='12345'),
+        )
+        task.save()
+        completed_task = task.create_completed_task()
+        self.assertEqual(completed_task.task_name, task.task_name)
+        self.assertEqual(completed_task.task_params, task.task_params)
+        self.assertEqual(completed_task.priority, task.priority)
+        self.assertEqual(completed_task.queue, task.queue)
+        self.assertEqual(completed_task.verbose_name, task.verbose_name)
+        self.assertEqual(completed_task.creator, task.creator)
+
+
 class TestTasks(TransactionTestCase):
 
     def setUp(self):

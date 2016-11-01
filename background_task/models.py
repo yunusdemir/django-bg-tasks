@@ -217,7 +217,9 @@ class Task(models.Model):
             failed_at=self.failed_at,
             last_error=self.last_error,
             locked_by=self.locked_by,
-            locked_at=self.locked_at
+            locked_at=self.locked_at,
+            verbose_name=self.verbose_name,
+            creator=self.creator,
         )
         completed_task.save()
         return completed_task
