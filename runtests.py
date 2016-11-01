@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 def main(argv):
     parser = ArgumentParser()
     parser.add_argument("--async", "-a", action="store_true", default=False,
-                        help="just build, do not run any tests")
+                        help="process background tasks in multiple threads")
     args = parser.parse_args(argv)
 
     os.environ['DJANGO_SETTINGS_MODULE'] = 'background_task.tests.test_settings'
