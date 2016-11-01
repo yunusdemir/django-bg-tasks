@@ -21,8 +21,8 @@ install:
     - pip install -r requirements-test.txt
 
 script:
-    - if [ "$TEST_ASYNC" = "TRUE" ]; python runtests.py --async; fi
-    - if ! [ "$TEST_ASYNC" = "TRUE" ]; python runtests.py; fi
+    - if [ "$TEST_ASYNC" = "TRUE" ]; then python runtests.py --async; fi
+    - if ! [ "$TEST_ASYNC" = "TRUE" ]; then python runtests.py; fi
 
 matrix:
     exclude:
