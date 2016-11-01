@@ -15,9 +15,9 @@ def main(argv):
                         help="just build, do not run any tests")
     args = parser.parse_args(argv)
 
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.test_settings'
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'background_task.tests.test_settings'
     if args.async:
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.test_settings_async'
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'background_task.tests.test_settings_async'
 
     django.setup()
     TestRunner = get_runner(settings)
