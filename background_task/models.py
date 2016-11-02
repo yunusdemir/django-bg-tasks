@@ -272,6 +272,9 @@ class Task(models.Model):
         return completed_task
 
     def create_repetition(self):
+        """
+        :return: A new Task with an offset of self.repeat, or None if the self.repeat_until is reached
+        """
         if not self.is_repeating_task():
             return None
 
