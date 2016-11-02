@@ -17,9 +17,9 @@ env:
 sudo: false
 
 install:
+    - pip install $DJANGO
     - pip install -r requirements.txt
     - pip install -r requirements-test.txt
-    - pip install $DJANGO
 
 script:
     - if [ "$TEST_ASYNC" = "TRUE" ]; then python runtests.py --async; fi
