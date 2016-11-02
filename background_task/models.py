@@ -101,7 +101,8 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         return qs.filter(unlocked)
 
     def new_task(self, task_name, args=None, kwargs=None,
-                 run_at=None, priority=0, queue=None, verbose_name=None, creator=None):
+                 run_at=None, priority=0, queue=None, verbose_name=None, creator=None,
+                 repeat=None, repeat_until=None):
         args = args or ()
         kwargs = kwargs or {}
         if run_at is None:
@@ -118,6 +119,8 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
                     queue=queue,
                     verbose_name=verbose_name,
                     creator=creator,
+                    repeat=repeat or Task.NEVER,
+                    repeat_until=repeat_until,
                     )
 
     def get_task(self, task_name, args=None, kwargs=None):
@@ -148,6 +151,23 @@ class Task(models.Model):
     priority = models.IntegerField(default=0, db_index=True)
     # when the task should be run
     run_at = models.DateTimeField(db_index=True)
+
+    HOURLY = 672
+    DAILY = 28
+    WEEKLY = 4
+    EVERY_2_WEEKS = 2
+    EVERY_4_WEEKS = 1
+    NEVER = 0
+    REPEAT_CHOICES = (
+        (HOURLY, 'hourly'),
+        (DAILY, 'daily'),
+        (WEEKLY, 'weekly'),
+        (EVERY_2_WEEKS, 'every 2 weeks'),
+        (EVERY_4_WEEKS, 'every 4 weeks'),
+        (NEVER, 'never'),
+    )
+    repeat = models.IntegerField(choices=REPEAT_CHOICES, default=NEVER)
+    repeat_until = models.DateTimeField(null=True, blank=True)
 
     # the "name" of the queue this is to be run on
     queue = models.CharField(max_length=255, db_index=True,

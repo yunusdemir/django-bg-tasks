@@ -363,6 +363,13 @@ class TestTaskModel(TransactionTestCase):
         task.save()
         self.assertEqual(task.creator, user)
 
+    def test_repeat(self):
+        repeat_until = timezone.now() + timedelta(days=1)
+        task = Task.objects.new_task('mytask', repeat=Task.HOURLY, repeat_until=repeat_until)
+        task.save()
+        self.assertEqual(task.repeat, Task.HOURLY)
+        self.assertEqual(task.repeat_until, repeat_until)
+
     def test_create_completed_task(self):
         task = Task.objects.new_task(
             task_name='mytask',
@@ -587,6 +594,12 @@ class TestTasks(TransactionTestCase):
         user = User.objects.create_user(username='bob', email='bob@example.com', password='12345')
         task = self.set_fields(test='test2', creator=user)
         self.assertEqual(task.creator, user)
+
+    def test_repeat_params(self):
+        repeat_until = timezone.now() + timedelta(weeks=1)
+        task = self.set_fields(test='test2', repeat=Task.HOURLY, repeat_until=repeat_until)
+        self.assertEqual(task.repeat, Task.HOURLY)
+        self.assertEqual(task.repeat_until, repeat_until)
 
 
 class MaxAttemptsTestCase(TransactionTestCase):
