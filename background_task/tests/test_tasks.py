@@ -698,6 +698,7 @@ class QuerySetManagerTestCase(TransactionTestCase):
         self.assertEqual(len(Task.objects.created_by(self.user2)), 0)
         for i in range(4):
             tasks.run_next_task()
+            time.sleep(0.5)
         self.assertEqual(len(Task.objects.all()), 0)
         self.assertEqual(len(Task.objects.created_by(self.user1)), 0)
         self.assertEqual(len(Task.objects.created_by(self.user2)), 0)
@@ -714,6 +715,7 @@ class QuerySetManagerTestCase(TransactionTestCase):
         self.assertEqual(len(CompletedTask.objects.succeeded(within=timedelta(hours=1))), 0)
         for i in range(4):
             tasks.run_next_task()
+            time.sleep(0.5)
         self.assertEqual(len(CompletedTask.objects.created_by(self.user1)), 2)
         self.assertEqual(len(CompletedTask.objects.created_by(self.user2)), 0)
         self.assertEqual(len(CompletedTask.objects.failed()), 2)
