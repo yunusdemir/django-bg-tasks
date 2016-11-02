@@ -3,6 +3,8 @@ import sys
 import time
 from datetime import timedelta, datetime
 
+from django.contrib.auth.models import User
+from django.test import override_settings
 from django.test.testcases import TransactionTestCase
 from django.conf import settings
 from django.utils import timezone
@@ -10,9 +12,6 @@ from django.utils import timezone
 from background_task.tasks import tasks, TaskSchedule, TaskProxy, BACKGROUND_TASK_RUN_ASYNC
 from background_task.models import Task, CompletedTask
 from background_task import background
-
-if sys.version_info >= (3, 0):
-    unicode = str
 
 _recorded = []
 
@@ -95,11 +94,11 @@ class TestBackgroundDecorator(TransactionTestCase):
         proxy = tasks.background(schedule=10)(empty_task)
         self.assertEqual(TaskSchedule(run_at=10), proxy.schedule)
 
-    def test__unicode__(self):
+    def test_str(self):
         proxy = tasks.background()(empty_task)
         self.assertEqual(
             u'TaskProxy(background_task.tests.test_tasks.empty_task)',
-            unicode(proxy)
+            str(proxy)
         )
 
     def test_shortcut(self):
@@ -352,9 +351,36 @@ class TestTaskModel(TransactionTestCase):
         # now try to get the lock again
         self.failIf(task.lock('otherlock') is None)
 
-    def test__unicode__(self):
+    def test_str(self):
         task = Task.objects.new_task('mytask')
-        self.assertEqual(u'Task(mytask)', unicode(task))
+        self.assertEqual(u'mytask', str(task))
+        task = Task.objects.new_task('mytask', verbose_name="My Task")
+        self.assertEqual(u'My Task', str(task))
+
+    def test_creator(self):
+        user = User.objects.create_user(username='bob', email='bob@example.com', password='12345')
+        task = Task.objects.new_task('mytask', creator=user)
+        task.save()
+        self.assertEqual(task.creator, user)
+
+    def test_create_completed_task(self):
+        task = Task.objects.new_task(
+            task_name='mytask',
+            args=[1],
+            kwargs={'q': 's'},
+            priority=1,
+            queue='myqueue',
+            verbose_name='My Task',
+            creator=User.objects.create_user(username='bob', email='bob@example.com', password='12345'),
+        )
+        task.save()
+        completed_task = task.create_completed_task()
+        self.assertEqual(completed_task.task_name, task.task_name)
+        self.assertEqual(completed_task.task_params, task.task_params)
+        self.assertEqual(completed_task.priority, task.priority)
+        self.assertEqual(completed_task.queue, task.queue)
+        self.assertEqual(completed_task.verbose_name, task.verbose_name)
+        self.assertEqual(completed_task.creator, task.creator)
 
 
 class TestTasks(TransactionTestCase):
@@ -545,6 +571,23 @@ class TestTasks(TransactionTestCase):
         completed_task = CompletedTask.objects.all()[0]
         self.failIf(completed_task.failed_at is None)
 
+    def test_run_task_return_value(self):
+        return_value = self.set_fields(test='test')
+        self.assertEqual(Task.objects.count(), 1)
+        task = Task.objects.first()
+        self.assertEqual(return_value, task)
+        self.assertEqual(return_value.pk, task.pk)
+
+    def test_verbose_name_param(self):
+        verbose_name = 'My Task'
+        task = self.set_fields(test='test1', verbose_name=verbose_name)
+        self.assertEqual(task.verbose_name, verbose_name)
+
+    def test_creator_param(self):
+        user = User.objects.create_user(username='bob', email='bob@example.com', password='12345')
+        task = self.set_fields(test='test2', creator=user)
+        self.assertEqual(task.creator, user)
+
 
 class MaxAttemptsTestCase(TransactionTestCase):
 
@@ -628,3 +671,57 @@ class NamedQueueTestCase(TransactionTestCase):
         run_next_task(queue='other_named_queue')
         self.assertNotIn('test3', completed_named_queue_tasks, msg='Task should be ignored')
         run_next_task()
+
+
+class QuerySetManagerTestCase(TransactionTestCase):
+
+    def setUp(self):
+        @tasks.background()
+        def succeeding_task():
+            return 0/1
+
+        @tasks.background()
+        def failing_task():
+            return 0/0
+
+        self.user1 = User.objects.create_user(username='bob', email='bob@example.com', password='12345')
+        self.user2 = User.objects.create_user(username='bob2', email='bob@example.com', password='12345')
+        self.task_all = succeeding_task()
+        self.task_user = succeeding_task(creator=self.user1)
+        self.failing_task_all = failing_task()
+        self.failing_task_user = failing_task(creator=self.user1)
+
+    @override_settings(MAX_ATTEMPTS=1)
+    def test_task_manager(self):
+        self.assertEqual(len(Task.objects.all()), 4)
+        self.assertEqual(len(Task.objects.created_by(self.user1)), 2)
+        self.assertEqual(len(Task.objects.created_by(self.user2)), 0)
+        for i in range(4):
+            tasks.run_next_task()
+            time.sleep(0.5)
+        self.assertEqual(len(Task.objects.all()), 0)
+        self.assertEqual(len(Task.objects.created_by(self.user1)), 0)
+        self.assertEqual(len(Task.objects.created_by(self.user2)), 0)
+
+    @override_settings(MAX_ATTEMPTS=1)
+    def test_completed_task_manager(self):
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1)), 0)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user2)), 0)
+        self.assertEqual(len(CompletedTask.objects.failed()), 0)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1).failed()), 0)
+        self.assertEqual(len(CompletedTask.objects.failed(within=timedelta(hours=1))), 0)
+        self.assertEqual(len(CompletedTask.objects.succeeded()), 0)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1).succeeded()), 0)
+        self.assertEqual(len(CompletedTask.objects.succeeded(within=timedelta(hours=1))), 0)
+        for i in range(4):
+            tasks.run_next_task()
+            time.sleep(0.5)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1)), 2)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user2)), 0)
+        self.assertEqual(len(CompletedTask.objects.failed()), 2)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1).failed()), 1)
+        self.assertEqual(len(CompletedTask.objects.failed(within=timedelta(hours=1))), 2)
+        self.assertEqual(len(CompletedTask.objects.succeeded()), 2)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1).succeeded()), 1)
+        self.assertEqual(len(CompletedTask.objects.succeeded(within=timedelta(hours=1))), 2)
+

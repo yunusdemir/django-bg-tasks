@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
 from django.conf import settings
-from django.utils.encoding import python_2_unicode_compatible
 import django
 import inspect
 
@@ -14,6 +14,8 @@ from hashlib import sha1
 import traceback
 import logging
 from compat import StringIO
+from compat import python_2_unicode_compatible
+from compat.models import GenericForeignKey
 import json
 
 from background_task.models_completed import CompletedTask
@@ -62,7 +64,26 @@ else:
         pass
 
 
+class TaskQuerySet(models.QuerySet):
+
+    def created_by(self, creator):
+        """
+        :return: A Task queryset filtered by creator
+        """
+        content_type = ContentType.objects.get_for_model(creator)
+        return self.filter(
+            creator_content_type=content_type,
+            creator_object_id=creator.id,
+        )
+
+
 class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
+
+    def get_queryset(self):
+        return TaskQuerySet(self.model, using=self._db)
+
+    def created_by(self, creator):
+        return self.get_queryset().created_by(creator)
 
     def find_available(self, queue=None):
         now = timezone.now()
@@ -80,7 +101,7 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         return qs.filter(unlocked)
 
     def new_task(self, task_name, args=None, kwargs=None,
-                 run_at=None, priority=0, queue=None):
+                 run_at=None, priority=0, queue=None, verbose_name=None, creator=None):
         args = args or ()
         kwargs = kwargs or {}
         if run_at is None:
@@ -94,7 +115,10 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
                     task_hash=task_hash,
                     priority=priority,
                     run_at=run_at,
-                    queue=queue)
+                    queue=queue,
+                    verbose_name=verbose_name,
+                    creator=creator,
+                    )
 
     def get_task(self, task_name, args=None, kwargs=None):
         args = args or ()
@@ -118,6 +142,8 @@ class Task(models.Model):
     # a sha1 hash of the name and params, to lookup already scheduled tasks
     task_hash = models.CharField(max_length=40, db_index=True)
 
+    verbose_name = models.CharField(max_length=255, null=True, blank=True)
+
     # what priority the task has
     priority = models.IntegerField(default=0, db_index=True)
     # when the task should be run
@@ -138,6 +164,10 @@ class Task(models.Model):
     locked_by = models.CharField(max_length=64, db_index=True,
                                  null=True, blank=True)
     locked_at = models.DateTimeField(db_index=True, null=True, blank=True)
+
+    creator_content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
+    creator_object_id = models.PositiveIntegerField(null=True, blank=True)
+    creator = GenericForeignKey('creator_content_type', 'creator_object_id')
 
     objects = TaskManager()
 
@@ -206,7 +236,9 @@ class Task(models.Model):
             failed_at=self.failed_at,
             last_error=self.last_error,
             locked_by=self.locked_by,
-            locked_at=self.locked_at
+            locked_at=self.locked_at,
+            verbose_name=self.verbose_name,
+            creator=self.creator,
         )
         completed_task.save()
         return completed_task
@@ -217,7 +249,7 @@ class Task(models.Model):
         return super(Task, self).save(*arg, **kw)
 
     def __str__(self):
-        return u'Task(%s)' % self.task_name
+        return u'{}'.format(self.verbose_name or self.task_name)
 
     class Meta:
         db_table = 'background_task'

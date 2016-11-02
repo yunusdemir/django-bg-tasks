@@ -190,11 +190,11 @@ class DBTaskRunner(object):
         self.worker_name = str(os.getpid())
 
     def schedule(self, task_name, args, kwargs, run_at=None,
-                 priority=0, action=TaskSchedule.SCHEDULE, queue=None):
+                 priority=0, action=TaskSchedule.SCHEDULE, queue=None, verbose_name=None, creator=None):
         '''Simply create a task object in the database'''
 
         task = Task.objects.new_task(task_name, args, kwargs,
-                                     run_at, priority, queue)
+                                     run_at, priority, queue, verbose_name, creator)
 
         if action != TaskSchedule.SCHEDULE:
             task_hash = task.task_hash
@@ -261,7 +261,10 @@ class TaskProxy(object):
         priority = schedule.priority
         action = schedule.action
         queue = kwargs.pop('queue', self.queue)
-        return self.runner.schedule(self.name, args, kwargs, run_at, priority, action, queue)
+        verbose_name = kwargs.pop('verbose_name', None)
+        creator = kwargs.pop('creator', None)
+        return self.runner.schedule(self.name, args, kwargs, run_at, priority, action, queue,
+                                    verbose_name, creator)
 
     def __str__(self):
         return 'TaskProxy(%s)' % self.name
