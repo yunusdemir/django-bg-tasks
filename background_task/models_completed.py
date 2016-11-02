@@ -10,6 +10,9 @@ from django.utils import timezone
 class CompletedTaskQuerySet(models.QuerySet):
 
     def created_by(self, creator):
+        """
+        :return: A CompletedTask queryset filtered by creator
+        """
         content_type = ContentType.objects.get_for_model(creator)
         return self.filter(
             creator_content_type=content_type,
@@ -17,6 +20,10 @@ class CompletedTaskQuerySet(models.QuerySet):
         )
 
     def failed(self, within=None):
+        """
+        :param within: A timedelta object
+        :return: A queryset of CompletedTasks that failed within the given timeframe (e.g. less than 1h ago)
+        """
         qs = self.filter(
             failed_at__isnull=False,
         )
@@ -26,6 +33,11 @@ class CompletedTaskQuerySet(models.QuerySet):
         return qs
 
     def succeeded(self, within=None):
+        """
+        :param within: A timedelta object
+        :return: A queryset of CompletedTasks that completed successfully within the given timeframe
+        (e.g. less than 1h ago)
+        """
         qs = self.filter(
             failed_at__isnull=True,
         )

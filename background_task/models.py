@@ -67,6 +67,9 @@ else:
 class TaskQuerySet(models.QuerySet):
 
     def created_by(self, creator):
+        """
+        :return: A Task queryset filtered by creator
+        """
         content_type = ContentType.objects.get_for_model(creator)
         return self.filter(
             creator_content_type=content_type,

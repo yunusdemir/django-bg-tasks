@@ -37,7 +37,7 @@ Add to INSTALLED_APPS::
 Supported versions and compatibility
 ====================================
 * Python: 2 & 3
-* Django: 1.4–1.10
+* Django: 1.8–1.10
 
 Full Django LTS to LTS compatibility through django-compat_.
 
@@ -72,6 +72,12 @@ Also you can run original function right now in synchronous mode::
 
     notify_user.now(user.id)   # launch a notify_user function and wait for it
     notify_user = notify_user.now   # revert task function back to normal function. Useful for testing.
+
+You can specify a verbose name and a creator when scheduling a task::
+
+    notify_user(user.id, verbose_name="Notify user", creator=user)
+
+The creator is stored as a GenericForeignKey, so any model may be used.
 
 
 Multiple Queues
