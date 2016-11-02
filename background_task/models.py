@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
@@ -16,6 +15,7 @@ import traceback
 import logging
 from compat import StringIO
 from compat import python_2_unicode_compatible
+from compat.models import GenericForeignKey
 import json
 
 from background_task.models_completed import CompletedTask
@@ -64,7 +64,23 @@ else:
         pass
 
 
+class TaskQuerySet(models.QuerySet):
+
+    def created_by(self, creator):
+        content_type = ContentType.objects.get_for_model(creator)
+        return self.filter(
+            creator_content_type=content_type,
+            creator_object_id=creator.id,
+        )
+
+
 class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
+
+    def get_queryset(self):
+        return TaskQuerySet(self.model, using=self._db)
+
+    def created_by(self, creator):
+        return self.get_queryset().created_by(creator)
 
     def find_available(self, queue=None):
         now = timezone.now()

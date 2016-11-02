@@ -4,6 +4,7 @@ import time
 from datetime import timedelta, datetime
 
 from django.contrib.auth.models import User
+from django.test import override_settings
 from django.test.testcases import TransactionTestCase
 from django.conf import settings
 from django.utils import timezone
@@ -670,3 +671,55 @@ class NamedQueueTestCase(TransactionTestCase):
         run_next_task(queue='other_named_queue')
         self.assertNotIn('test3', completed_named_queue_tasks, msg='Task should be ignored')
         run_next_task()
+
+
+class QuerySetManagerTestCase(TransactionTestCase):
+
+    def setUp(self):
+        @tasks.background()
+        def succeeding_task():
+            return 0/1
+
+        @tasks.background()
+        def failing_task():
+            return 0/0
+
+        self.user1 = User.objects.create_user(username='bob', email='bob@example.com', password='12345')
+        self.user2 = User.objects.create_user(username='bob2', email='bob@example.com', password='12345')
+        self.task_all = succeeding_task()
+        self.task_user = succeeding_task(creator=self.user1)
+        self.failing_task_all = failing_task()
+        self.failing_task_user = failing_task(creator=self.user1)
+
+    @override_settings(MAX_ATTEMPTS=1)
+    def test_task_manager(self):
+        self.assertEqual(len(Task.objects.all()), 4)
+        self.assertEqual(len(Task.objects.created_by(self.user1)), 2)
+        self.assertEqual(len(Task.objects.created_by(self.user2)), 0)
+        for i in range(4):
+            tasks.run_next_task()
+        self.assertEqual(len(Task.objects.all()), 0)
+        self.assertEqual(len(Task.objects.created_by(self.user1)), 0)
+        self.assertEqual(len(Task.objects.created_by(self.user2)), 0)
+
+    @override_settings(MAX_ATTEMPTS=1)
+    def test_completed_task_manager(self):
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1)), 0)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user2)), 0)
+        self.assertEqual(len(CompletedTask.objects.failed()), 0)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1).failed()), 0)
+        self.assertEqual(len(CompletedTask.objects.failed(within=timedelta(hours=1))), 0)
+        self.assertEqual(len(CompletedTask.objects.succeeded()), 0)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1).succeeded()), 0)
+        self.assertEqual(len(CompletedTask.objects.succeeded(within=timedelta(hours=1))), 0)
+        for i in range(4):
+            tasks.run_next_task()
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1)), 2)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user2)), 0)
+        self.assertEqual(len(CompletedTask.objects.failed()), 2)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1).failed()), 1)
+        self.assertEqual(len(CompletedTask.objects.failed(within=timedelta(hours=1))), 2)
+        self.assertEqual(len(CompletedTask.objects.succeeded()), 2)
+        self.assertEqual(len(CompletedTask.objects.created_by(self.user1).succeeded()), 1)
+        self.assertEqual(len(CompletedTask.objects.succeeded(within=timedelta(hours=1))), 2)
+

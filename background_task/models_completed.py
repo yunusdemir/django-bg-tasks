@@ -1,9 +1,38 @@
 # -*- coding: utf-8 -*-
 from compat import python_2_unicode_compatible
-from django.contrib.contenttypes.fields import GenericForeignKey
+from compat.models import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
 from django.db import models
+from django.utils import timezone
+
+
+class CompletedTaskQuerySet(models.QuerySet):
+
+    def created_by(self, creator):
+        content_type = ContentType.objects.get_for_model(creator)
+        return self.filter(
+            creator_content_type=content_type,
+            creator_object_id=creator.id,
+        )
+
+    def failed(self, within=None):
+        qs = self.filter(
+            failed_at__isnull=False,
+        )
+        if within:
+            time_limit = timezone.now() - within
+            qs = qs.filter(failed_at__gt=time_limit)
+        return qs
+
+    def succeeded(self, within=None):
+        qs = self.filter(
+            failed_at__isnull=True,
+        )
+        if within:
+            time_limit = timezone.now() - within
+            qs = qs.filter(run_at__gt=time_limit)
+        return qs
 
 
 @python_2_unicode_compatible
@@ -41,6 +70,8 @@ class CompletedTask(models.Model):
     creator_content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     creator_object_id = models.PositiveIntegerField(null=True, blank=True)
     creator = GenericForeignKey('creator_content_type', 'creator_object_id')
+
+    objects = CompletedTaskQuerySet.as_manager()
 
     def __str__(self):
         return u'{} - {}'.format(
