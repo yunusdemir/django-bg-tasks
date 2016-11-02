@@ -577,6 +577,16 @@ class TestTasks(TransactionTestCase):
         self.assertEqual(return_value, task)
         self.assertEqual(return_value.pk, task.pk)
 
+    def test_verbose_name_param(self):
+        verbose_name = 'My Task'
+        task = self.set_fields(test='test1', verbose_name=verbose_name)
+        self.assertEqual(task.verbose_name, verbose_name)
+
+    def test_creator_param(self):
+        user = User.objects.create_user(username='bob', email='bob@example.com', password='12345')
+        task = self.set_fields(test='test2', creator=user)
+        self.assertEqual(task.creator, user)
+
 
 class MaxAttemptsTestCase(TransactionTestCase):
 
