@@ -152,14 +152,14 @@ class Task(models.Model):
     # when the task should be run
     run_at = models.DateTimeField(db_index=True)
 
-    # Repeat choices are encoded as fractions of 4 weeks.
+    # Repeat choices are encoded as number of seconds
     # The repeat implementation is based on this encoding
-    HOURLY = Decimal(672)
-    DAILY = Decimal(28)
-    WEEKLY = Decimal(4)
-    EVERY_2_WEEKS = Decimal(2)
-    EVERY_4_WEEKS = Decimal(1)
-    NEVER = Decimal(0)
+    HOURLY = 3600
+    DAILY = 24 * HOURLY
+    WEEKLY = 7 * DAILY
+    EVERY_2_WEEKS = 2 * WEEKLY
+    EVERY_4_WEEKS = 4 * WEEKLY
+    NEVER = 0
     REPEAT_CHOICES = (
         (HOURLY, 'hourly'),
         (DAILY, 'daily'),
@@ -168,7 +168,7 @@ class Task(models.Model):
         (EVERY_4_WEEKS, 'every 4 weeks'),
         (NEVER, 'never'),
     )
-    repeat = models.DecimalField(max_digits=9, decimal_places=2, choices=REPEAT_CHOICES, default=NEVER)
+    repeat = models.BigIntegerField(choices=REPEAT_CHOICES, default=NEVER)
     repeat_until = models.DateTimeField(null=True, blank=True)
 
     # the "name" of the queue this is to be run on
@@ -280,7 +280,7 @@ class Task(models.Model):
             return None
 
         args, kwargs = self.params()
-        new_run_at = self.run_at + timedelta(weeks=(4 * 1 / float(self.repeat)))
+        new_run_at = self.run_at + timedelta(seconds=self.repeat)
 
         new_task = TaskManager().new_task(
             task_name=self.task_name,

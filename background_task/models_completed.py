@@ -65,8 +65,7 @@ class CompletedTask(models.Model):
     # when the task should be run
     run_at = models.DateTimeField(db_index=True)
 
-    repeat = models.DecimalField(max_digits=9, decimal_places=2, choices=Task.REPEAT_CHOICES,
-                                 default=Task.NEVER)
+    repeat = models.BigIntegerField(choices=Task.REPEAT_CHOICES, default=Task.NEVER)
     repeat_until = models.DateTimeField(null=True, blank=True)
 
     # the "name" of the queue this is to be run on
