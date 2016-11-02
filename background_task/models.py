@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
@@ -18,7 +19,6 @@ from compat import python_2_unicode_compatible
 from compat.models import GenericForeignKey
 import json
 
-from background_task.models_completed import CompletedTask
 from background_task.signals import task_failed, task_rescheduled
 
 
@@ -152,12 +152,14 @@ class Task(models.Model):
     # when the task should be run
     run_at = models.DateTimeField(db_index=True)
 
-    HOURLY = 672
-    DAILY = 28
-    WEEKLY = 4
-    EVERY_2_WEEKS = 2
-    EVERY_4_WEEKS = 1
-    NEVER = 0
+    # Repeat choices are encoded as fractions of 4 weeks.
+    # The repeat implementation is based on this encoding
+    HOURLY = Decimal(672)
+    DAILY = Decimal(28)
+    WEEKLY = Decimal(4)
+    EVERY_2_WEEKS = Decimal(2)
+    EVERY_4_WEEKS = Decimal(1)
+    NEVER = Decimal(0)
     REPEAT_CHOICES = (
         (HOURLY, 'hourly'),
         (DAILY, 'daily'),
@@ -166,7 +168,7 @@ class Task(models.Model):
         (EVERY_4_WEEKS, 'every 4 weeks'),
         (NEVER, 'never'),
     )
-    repeat = models.IntegerField(choices=REPEAT_CHOICES, default=NEVER)
+    repeat = models.DecimalField(max_digits=9, decimal_places=2, choices=REPEAT_CHOICES, default=NEVER)
     repeat_until = models.DateTimeField(null=True, blank=True)
 
     # the "name" of the queue this is to be run on
@@ -218,6 +220,9 @@ class Task(models.Model):
         max_attempts = getattr(settings, 'MAX_ATTEMPTS', 25)
         return self.attempts >= max_attempts
 
+    def is_repeating_task(self):
+        return self.repeat > self.NEVER
+
     def reschedule(self, type, err, traceback):
         '''
         Set a new time to run the task in future, or create a CompletedTask and delete the Task
@@ -245,6 +250,7 @@ class Task(models.Model):
         '''
         Returns a new CompletedTask instance with the same values
         '''
+        from background_task.models_completed import CompletedTask
         completed_task = CompletedTask(
             task_name=self.task_name,
             task_params=self.task_params,
@@ -259,9 +265,37 @@ class Task(models.Model):
             locked_at=self.locked_at,
             verbose_name=self.verbose_name,
             creator=self.creator,
+            repeat=self.repeat,
+            repeat_until=self.repeat_until,
         )
         completed_task.save()
         return completed_task
+
+    def create_repetition(self):
+        if not self.is_repeating_task():
+            return None
+
+        if self.repeat_until <= timezone.now():
+            # Repeat chain completed
+            return None
+
+        args, kwargs = self.params()
+        new_run_at = self.run_at + timedelta(weeks=(4 * 1 / float(self.repeat)))
+
+        new_task = TaskManager().new_task(
+            task_name=self.task_name,
+            args=args,
+            kwargs=kwargs,
+            run_at=new_run_at,
+            priority=self.priority,
+            queue=self.queue,
+            verbose_name=self.verbose_name,
+            creator=self.creator,
+            repeat=self.repeat,
+            repeat_until=self.repeat_until,
+        )
+        new_task.save()
+        return new_task
 
     def save(self, *arg, **kw):
         # force NULL rather than empty string

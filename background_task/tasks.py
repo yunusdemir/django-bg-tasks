@@ -50,6 +50,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             task.increment_attempts()
             completed = task.create_completed_task()
             task_successful.send(sender=task.__class__, task_id=task.id, completed_task=completed)
+            task.create_repetition()
             task.delete()
             logging.info('Ran task and deleting %s', task)
 

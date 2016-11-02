@@ -10,7 +10,8 @@ from django.conf import settings
 from django.utils import timezone
 
 from background_task.tasks import tasks, TaskSchedule, TaskProxy, BACKGROUND_TASK_RUN_ASYNC
-from background_task.models import Task, CompletedTask
+from background_task.models import Task
+from background_task.models_completed import CompletedTask
 from background_task import background
 
 _recorded = []
@@ -388,6 +389,8 @@ class TestTaskModel(TransactionTestCase):
         self.assertEqual(completed_task.queue, task.queue)
         self.assertEqual(completed_task.verbose_name, task.verbose_name)
         self.assertEqual(completed_task.creator, task.creator)
+        self.assertEqual(completed_task.repeat, task.repeat)
+        self.assertEqual(completed_task.repeat_until, task.repeat_until)
 
 
 class TestTasks(TransactionTestCase):
@@ -595,12 +598,6 @@ class TestTasks(TransactionTestCase):
         task = self.set_fields(test='test2', creator=user)
         self.assertEqual(task.creator, user)
 
-    def test_repeat_params(self):
-        repeat_until = timezone.now() + timedelta(weeks=1)
-        task = self.set_fields(test='test2', repeat=Task.HOURLY, repeat_until=repeat_until)
-        self.assertEqual(task.repeat, Task.HOURLY)
-        self.assertEqual(task.repeat_until, repeat_until)
-
 
 class MaxAttemptsTestCase(TransactionTestCase):
 
@@ -684,6 +681,39 @@ class NamedQueueTestCase(TransactionTestCase):
         run_next_task(queue='other_named_queue')
         self.assertNotIn('test3', completed_named_queue_tasks, msg='Task should be ignored')
         run_next_task()
+
+
+class RepetitionTestCase(TransactionTestCase):
+
+    def setUp(self):
+        @tasks.background()
+        def my_task(*args, **kwargs):
+            pass
+        self.my_task = my_task
+
+    def test_repeat(self):
+        repeat_until = timezone.now() + timedelta(weeks=1)
+        old_task = self.my_task(
+            'test-repeat',
+            foo='bar',
+            repeat=Task.HOURLY,
+            repeat_until=repeat_until,
+            verbose_name="Test repeat",
+        )
+        self.assertEqual(old_task.repeat, Task.HOURLY)
+        self.assertEqual(old_task.repeat_until, repeat_until)
+        tasks.run_next_task()
+        time.sleep(0.5)
+
+        self.assertEqual(Task.objects.filter(repeat=Task.HOURLY).count(), 1)
+        new_task = Task.objects.get(repeat=Task.HOURLY)
+        self.assertNotEqual(new_task.id, old_task.id)
+        self.assertEqual(new_task.task_name, old_task.task_name)
+        self.assertEqual(new_task.params(), old_task.params())
+        self.assertEqual(new_task.task_hash, old_task.task_hash)
+        self.assertEqual(new_task.verbose_name, old_task.verbose_name)
+        self.assertEqual((new_task.run_at - old_task.run_at), timedelta(hours=1))
+        self.assertEqual(new_task.repeat_until, old_task.repeat_until)
 
 
 class QuerySetManagerTestCase(TransactionTestCase):
