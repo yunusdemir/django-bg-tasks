@@ -77,18 +77,18 @@ You can specify a verbose name and a creator when scheduling a task::
 
     notify_user(user.id, verbose_name="Notify user", creator=user)
 
-The creator is stored as a GenericForeignKey, so any model may be used.
+The creator is stored as a ``GenericForeignKey``, so any model may be used.
 
 Repeating Tasks
 ===============
 
-Repeating tasks can be initialized like this:
+Repeating tasks can be initialized like this::
 
     notify_user(user.id, repeat=<number of seconds>, repeat_until=<datetime>)
 
-When a repeating task completes successfully, a new Task with an offset of `repeat` is scheduled. On the other hand, if a repeating task fails and is not restarted, the repetition chain is stopped.
+When a repeating task completes successfully, a new Task with an offset of ``repeat`` is scheduled. On the other hand, if a repeating task fails and is not restarted, the repetition chain is stopped.
 
-Optionally, `repeat` can be one of the following choices: NEVER (default), HOURLY, DAILY, WEEKLY, EVERY_2_WEEKS, EVERY_4_WEEKS.
+Optionally, ``repeat`` can be one of the following choices: NEVER (default), HOURLY, DAILY, WEEKLY, EVERY_2_WEEKS, EVERY_4_WEEKS.
 
 Multiple Queues
 ===============
