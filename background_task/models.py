@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
@@ -18,7 +19,6 @@ from compat import python_2_unicode_compatible
 from compat.models import GenericForeignKey
 import json
 
-from background_task.models_completed import CompletedTask
 from background_task.signals import task_failed, task_rescheduled
 
 
@@ -101,7 +101,8 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         return qs.filter(unlocked)
 
     def new_task(self, task_name, args=None, kwargs=None,
-                 run_at=None, priority=0, queue=None, verbose_name=None, creator=None):
+                 run_at=None, priority=0, queue=None, verbose_name=None, creator=None,
+                 repeat=None, repeat_until=None):
         args = args or ()
         kwargs = kwargs or {}
         if run_at is None:
@@ -118,6 +119,8 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
                     queue=queue,
                     verbose_name=verbose_name,
                     creator=creator,
+                    repeat=repeat or Task.NEVER,
+                    repeat_until=repeat_until,
                     )
 
     def get_task(self, task_name, args=None, kwargs=None):
@@ -148,6 +151,25 @@ class Task(models.Model):
     priority = models.IntegerField(default=0, db_index=True)
     # when the task should be run
     run_at = models.DateTimeField(db_index=True)
+
+    # Repeat choices are encoded as number of seconds
+    # The repeat implementation is based on this encoding
+    HOURLY = 3600
+    DAILY = 24 * HOURLY
+    WEEKLY = 7 * DAILY
+    EVERY_2_WEEKS = 2 * WEEKLY
+    EVERY_4_WEEKS = 4 * WEEKLY
+    NEVER = 0
+    REPEAT_CHOICES = (
+        (HOURLY, 'hourly'),
+        (DAILY, 'daily'),
+        (WEEKLY, 'weekly'),
+        (EVERY_2_WEEKS, 'every 2 weeks'),
+        (EVERY_4_WEEKS, 'every 4 weeks'),
+        (NEVER, 'never'),
+    )
+    repeat = models.BigIntegerField(choices=REPEAT_CHOICES, default=NEVER)
+    repeat_until = models.DateTimeField(null=True, blank=True)
 
     # the "name" of the queue this is to be run on
     queue = models.CharField(max_length=255, db_index=True,
@@ -198,6 +220,9 @@ class Task(models.Model):
         max_attempts = getattr(settings, 'MAX_ATTEMPTS', 25)
         return self.attempts >= max_attempts
 
+    def is_repeating_task(self):
+        return self.repeat > self.NEVER
+
     def reschedule(self, type, err, traceback):
         '''
         Set a new time to run the task in future, or create a CompletedTask and delete the Task
@@ -225,6 +250,7 @@ class Task(models.Model):
         '''
         Returns a new CompletedTask instance with the same values
         '''
+        from background_task.models_completed import CompletedTask
         completed_task = CompletedTask(
             task_name=self.task_name,
             task_params=self.task_params,
@@ -239,9 +265,40 @@ class Task(models.Model):
             locked_at=self.locked_at,
             verbose_name=self.verbose_name,
             creator=self.creator,
+            repeat=self.repeat,
+            repeat_until=self.repeat_until,
         )
         completed_task.save()
         return completed_task
+
+    def create_repetition(self):
+        """
+        :return: A new Task with an offset of self.repeat, or None if the self.repeat_until is reached
+        """
+        if not self.is_repeating_task():
+            return None
+
+        if self.repeat_until and self.repeat_until <= timezone.now():
+            # Repeat chain completed
+            return None
+
+        args, kwargs = self.params()
+        new_run_at = self.run_at + timedelta(seconds=self.repeat)
+
+        new_task = TaskManager().new_task(
+            task_name=self.task_name,
+            args=args,
+            kwargs=kwargs,
+            run_at=new_run_at,
+            priority=self.priority,
+            queue=self.queue,
+            verbose_name=self.verbose_name,
+            creator=self.creator,
+            repeat=self.repeat,
+            repeat_until=self.repeat_until,
+        )
+        new_task.save()
+        return new_task
 
     def save(self, *arg, **kw):
         # force NULL rather than empty string

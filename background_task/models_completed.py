@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
 
+from background_task.models import Task
+
 
 class CompletedTaskQuerySet(models.QuerySet):
 
@@ -62,6 +64,9 @@ class CompletedTask(models.Model):
     priority = models.IntegerField(default=0, db_index=True)
     # when the task should be run
     run_at = models.DateTimeField(db_index=True)
+
+    repeat = models.BigIntegerField(choices=Task.REPEAT_CHOICES, default=Task.NEVER)
+    repeat_until = models.DateTimeField(null=True, blank=True)
 
     # the "name" of the queue this is to be run on
     queue = models.CharField(max_length=255, db_index=True,
