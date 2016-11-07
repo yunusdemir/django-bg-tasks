@@ -278,7 +278,7 @@ class Task(models.Model):
         if not self.is_repeating_task():
             return None
 
-        if self.repeat_until <= timezone.now():
+        if self.repeat_until and self.repeat_until <= timezone.now():
             # Repeat chain completed
             return None
 

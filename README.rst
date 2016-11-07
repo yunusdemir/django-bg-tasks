@@ -84,11 +84,13 @@ Repeating Tasks
 
 Repeating tasks can be initialized like this::
 
-    notify_user(user.id, repeat=<number of seconds>, repeat_until=<datetime>)
+    notify_user(user.id, repeat=<number of seconds>, repeat_until=<datetime or None>)
 
 When a repeating task completes successfully, a new Task with an offset of ``repeat`` is scheduled. On the other hand, if a repeating task fails and is not restarted, the repetition chain is stopped.
 
-Optionally, ``repeat`` can be one of the following choices: NEVER (default), HOURLY, DAILY, WEEKLY, EVERY_2_WEEKS, EVERY_4_WEEKS.
+``repeat`` is given in seconds. The following constants are provided: ``Task.NEVER`` (default), ``Task.HOURLY``, ``Task.DAILY``, ``Task.WEEKLY``, ``Task.EVERY_2_WEEKS``, ``Task.EVERY_4_WEEKS``.
+
+The time offset is computed from the initially scheduled time of the original task, not the time the task was actually executed. If the process command is interrupted, the interval between the original task and its repetition may be shorter than ``repeat``.
 
 Multiple Queues
 ===============
