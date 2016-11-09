@@ -260,7 +260,7 @@ class TaskProxy(object):
         schedule = kwargs.pop('schedule', None)
         schedule = TaskSchedule.create(schedule).merge(self.schedule)
         run_at = schedule.run_at
-        priority = schedule.priority
+        priority = kwargs.pop('priority', schedule.priority)
         action = schedule.action
         queue = kwargs.pop('queue', self.queue)
         verbose_name = kwargs.pop('verbose_name', None)

@@ -740,8 +740,7 @@ class QuerySetManagerTestCase(TransactionTestCase):
         self.assertEqual(len(Task.objects.created_by(self.user1)), 2)
         self.assertEqual(len(Task.objects.created_by(self.user2)), 0)
         for i in range(4):
-            tasks.run_next_task()
-            time.sleep(0.5)
+            run_next_task()
         self.assertEqual(len(Task.objects.all()), 0)
         self.assertEqual(len(Task.objects.created_by(self.user1)), 0)
         self.assertEqual(len(Task.objects.created_by(self.user2)), 0)
@@ -757,8 +756,7 @@ class QuerySetManagerTestCase(TransactionTestCase):
         self.assertEqual(len(CompletedTask.objects.created_by(self.user1).succeeded()), 0)
         self.assertEqual(len(CompletedTask.objects.succeeded(within=timedelta(hours=1))), 0)
         for i in range(4):
-            tasks.run_next_task()
-            time.sleep(0.5)
+            run_next_task()
         self.assertEqual(len(CompletedTask.objects.created_by(self.user1)), 2)
         self.assertEqual(len(CompletedTask.objects.created_by(self.user2)), 0)
         self.assertEqual(len(CompletedTask.objects.failed()), 2)
@@ -768,3 +766,33 @@ class QuerySetManagerTestCase(TransactionTestCase):
         self.assertEqual(len(CompletedTask.objects.created_by(self.user1).succeeded()), 1)
         self.assertEqual(len(CompletedTask.objects.succeeded(within=timedelta(hours=1))), 2)
 
+
+class PriorityTestCase(TransactionTestCase):
+
+    def setUp(self):
+        @tasks.background()
+        def mytask():
+            pass
+
+        run_at = timezone.now() - timedelta(minutes=1)
+
+        self.high_priority_task = mytask(priority=99, schedule=run_at)
+        self.low_priority_task = mytask(priority=-1, schedule=run_at)
+
+    def test_priority(self):
+        self.assertEqual(self.high_priority_task.priority, 99)
+        self.assertEqual(self.low_priority_task.priority, -1)
+
+        available = Task.objects.find_available()
+        self.assertEqual(available.count(), 2)
+        self.assertEqual(available.first(), self.high_priority_task)
+        self.assertEqual(available.last(), self.low_priority_task)
+
+        self.assertFalse(CompletedTask.objects.filter(priority=self.high_priority_task.priority).exists())
+        self.assertFalse(CompletedTask.objects.filter(priority=self.low_priority_task.priority).exists())
+        run_next_task()
+        self.assertTrue(CompletedTask.objects.filter(priority=self.high_priority_task.priority).exists())
+        self.assertFalse(CompletedTask.objects.filter(priority=self.low_priority_task.priority).exists())
+        run_next_task()
+        self.assertTrue(CompletedTask.objects.filter(priority=self.high_priority_task.priority).exists())
+        self.assertTrue(CompletedTask.objects.filter(priority=self.low_priority_task.priority).exists())
