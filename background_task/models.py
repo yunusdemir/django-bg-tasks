@@ -22,6 +22,9 @@ import json
 from background_task.signals import task_failed, task_rescheduled
 
 
+logger = logging.getLogger(__name__)
+
+
 # inspired by http://github.com/tobi/delayed_job
 #
 
@@ -232,14 +235,14 @@ class Task(models.Model):
         self.increment_attempts()
         if self.has_reached_max_attempts():
             self.failed_at = timezone.now()
-            logging.warn('Marking task %s as failed', self)
+            logger.warning('Marking task %s as failed', self)
             completed = self.create_completed_task()
             task_failed.send(sender=self.__class__, task_id=self.id, completed_task=completed)
             self.delete()
         else:
             backoff = timedelta(seconds=(self.attempts ** 4) + 5)
             self.run_at = timezone.now() + backoff
-            logging.warn('Rescheduling task %s for %s later at %s', self,
+            logger.warning('Rescheduling task %s for %s later at %s', self,
                 backoff, self.run_at)
             task_rescheduled.send(sender=self.__class__, task=self)
             self.locked_by = None

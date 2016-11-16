@@ -52,12 +52,12 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             task_successful.send(sender=task.__class__, task_id=task.id, completed_task=completed)
             task.create_repetition()
             task.delete()
-            logging.info('Ran task and deleting %s', task)
+            logger.info('Ran task and deleting %s', task)
 
     except Exception as ex:
         t, e, traceback = sys.exc_info()
         if task:
-            logging.warn('Rescheduling %s', task, exc_info=(t, e, traceback))
+            logger.error('Rescheduling %s', task, exc_info=(t, e, traceback))
             task_error.send(sender=ex.__class__, task=task)
             task.reschedule(t, e, traceback)
         del traceback
@@ -230,7 +230,7 @@ class DBTaskRunner(object):
 
     @atomic
     def run_task(self, tasks, task):
-        logging.info('Running %s', task)
+        logger.info('Running %s', task)
         tasks.run_task(task)
 
     @atomic
