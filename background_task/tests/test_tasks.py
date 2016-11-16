@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import sys
 import time
 from datetime import timedelta, datetime
+from mock import patch
 
 from django.contrib.auth.models import User
 from django.test import override_settings
@@ -796,3 +796,34 @@ class PriorityTestCase(TransactionTestCase):
         run_next_task()
         self.assertTrue(CompletedTask.objects.filter(priority=self.high_priority_task.priority).exists())
         self.assertTrue(CompletedTask.objects.filter(priority=self.low_priority_task.priority).exists())
+
+
+class LoggingTestCase(TransactionTestCase):
+
+    def setUp(self):
+        @tasks.background()
+        def succeeding_task():
+            return 0/1
+
+        @tasks.background()
+        def failing_task():
+            return 0/0
+
+        self.succeeding_task = succeeding_task
+        self.failing_task = failing_task
+
+    @patch('background_task.tasks.logger')
+    def test_success_logging(self, mock_logger):
+        self.succeeding_task()
+        run_next_task()
+        self.assertFalse(mock_logger.warning.called)
+        self.assertFalse(mock_logger.error.called)
+        self.assertFalse(mock_logger.critical.called)
+
+    @patch('background_task.tasks.logger')
+    def test_error_logging(self, mock_logger):
+        self.failing_task()
+        run_next_task()
+        self.assertFalse(mock_logger.warning.called)
+        self.assertTrue(mock_logger.error.called)
+        self.assertFalse(mock_logger.critical.called)
