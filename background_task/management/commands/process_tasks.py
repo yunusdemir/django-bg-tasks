@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import sys
 import time
 
 from django import VERSION
@@ -9,6 +10,18 @@ from background_task.tasks import tasks, autodiscover
 
 
 logger = logging.getLogger(__name__)
+
+
+def _configure_log_std():
+    class StdOutWrapper(object):
+        def write(self, s):
+            logger.info(s)
+
+    class StdErrWrapper(object):
+        def write(self, s):
+            logger.error(s)
+    sys.stdout = StdOutWrapper()
+    sys.stderr = StdErrWrapper()
 
 
 class Command(BaseCommand):
@@ -35,6 +48,12 @@ class Command(BaseCommand):
             'dest': 'queue',
             'help': 'Only process tasks on this named queue',
         }),
+        (('--log-std', ), {
+            'action': 'store_true',
+            'dest': 'log_std',
+            'help': 'Redirect stdout and stderr to the logging system',
+        }),
+
     )
 
     if VERSION < (1, 8):
@@ -54,6 +73,10 @@ class Command(BaseCommand):
         duration = options.pop('duration', 0)
         sleep = options.pop('sleep', 5.0)
         queue = options.pop('queue', None)
+        log_std = options.pop('log_std', False)
+
+        if log_std:
+            _configure_log_std()
 
         autodiscover()
 
