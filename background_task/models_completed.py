@@ -86,7 +86,7 @@ class CompletedTask(models.Model):
 
     creator_content_type = models.ForeignKey(
         ContentType, null=True, blank=True,
-        related_name='background_task', on_delete=models.CASCADE
+        related_name='completed_background_task', on_delete=models.CASCADE
     )
     creator_object_id = models.PositiveIntegerField(null=True, blank=True)
     creator = GenericForeignKey('creator_content_type', 'creator_object_id')
