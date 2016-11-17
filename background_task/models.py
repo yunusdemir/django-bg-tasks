@@ -190,7 +190,10 @@ class Task(models.Model):
                                  null=True, blank=True)
     locked_at = models.DateTimeField(db_index=True, null=True, blank=True)
 
-    creator_content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
+    creator_content_type = models.ForeignKey(
+        ContentType, null=True, blank=True,
+        related_name='background_task', on_delete=models.CASCADE
+    )
     creator_object_id = models.PositiveIntegerField(null=True, blank=True)
     creator = GenericForeignKey('creator_content_type', 'creator_object_id')
 
