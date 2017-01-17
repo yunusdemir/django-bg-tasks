@@ -32,7 +32,11 @@ Add to INSTALLED_APPS::
         'background_task',
         # ...
     )
+    
+Migrate your database::
 
+    python manage.py makemigrations background_task
+    python manage.py migrate
 
 Supported versions and compatibility
 ====================================
