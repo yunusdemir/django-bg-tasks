@@ -132,6 +132,7 @@ There are a few settings options that can be set in your `settings.py` file.
 * `MAX_ATTEMPTS` - controls how many times a task will be attempted (default 25)
 * `MAX_RUN_TIME` - maximum possible task run time, after which tasks will be unlocked and tried again (default 3600 seconds)
 * Set ``BACKGROUND_TASK_RUN_ASYNC = True`` in the project setting will run the tasks asynchronous. This means the tasks will be processed in parallel (at the same time) instead of processing one by one (one after the other).
+* `BACKGROUND_TASK_ASYNC_THREADS` - Specifies number of concurrent threads. Default is None, that means ``os.cpu_count() or 1``.
 
 Task errors
 ===========
