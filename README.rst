@@ -83,6 +83,8 @@ You can specify a verbose name and a creator when scheduling a task::
 
 The creator is stored as a ``GenericForeignKey``, so any model may be used.
 
+To get the functions decorated by ``background`` picked up by the auto discovery mechanism,  they must be placed in a file named ``tasks.py`` in your module, eg. ``myapp/tasks.py``. 
+
 Repeating Tasks
 ===============
 
