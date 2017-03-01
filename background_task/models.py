@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.conf import settings
 import django
 import inspect
+import multiprocessing
 
 
 from django.utils import timezone
@@ -93,7 +94,20 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         if queue:
             qs = qs.filter(queue=queue)
         ready = qs.filter(run_at__lte=now, failed_at=None)
-        return ready.order_by('-priority', 'run_at')
+        ready = ready.order_by('-priority', 'run_at')
+
+        BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False)
+        BACKGROUND_TASK_ASYNC_THREADS = getattr(settings, 'BACKGROUND_TASK_ASYNC_THREADS', multiprocessing.cpu_count())
+
+        if BACKGROUND_TASK_RUN_ASYNC:
+            currently_locked = self.locked(now).count()
+            count = BACKGROUND_TASK_ASYNC_THREADS - currently_locked
+            if count > 0:
+                ready = ready[:count]
+            else:
+                ready = self.none()
+
+        return ready
 
     def unlocked(self, now):
         max_run_time = getattr(settings, 'MAX_RUN_TIME', 3600)
@@ -101,6 +115,13 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         expires_at = now - timedelta(seconds=max_run_time)
         unlocked = Q(locked_by=None) | Q(locked_at__lt=expires_at)
         return qs.filter(unlocked)
+
+    def locked(self, now):
+        max_run_time = getattr(settings, 'MAX_RUN_TIME', 3600)
+        qs = self.get_queryset()
+        expires_at = now - timedelta(seconds=max_run_time)
+        locked = Q(locked_by__isnull=False) | Q(locked_at__gt=expires_at)
+        return qs.filter(locked)
 
     def new_task(self, task_name, args=None, kwargs=None,
                  run_at=None, priority=0, queue=None, verbose_name=None, creator=None,
