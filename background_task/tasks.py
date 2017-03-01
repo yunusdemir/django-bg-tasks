@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import logging
 import os
 import sys
-import threading
 
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils import timezone
