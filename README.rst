@@ -6,6 +6,10 @@ Django Background Tasks
 .. image:: https://travis-ci.org/arteria/django-background-tasks.svg
     :target: https://travis-ci.org/arteria/django-background-tasks
 
+.. image:: https://img.shields.io/pypi/v/django-background-tasks.svg
+    :target: https://pypi.python.org/pypi/django-hijack
+
+
 Django Background Task is a databased-backed work queue for Django_, loosely based around Ruby's DelayedJob_ library. This project was adopted and adapted from this_ repo.
 
 To avoid conflicts on PyPI we renamed it to django-background-tasks (plural). For an easy upgrade from django-background-task to django-background-tasks, the internal module structure were left untouched.
