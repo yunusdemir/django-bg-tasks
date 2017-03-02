@@ -36,7 +36,7 @@ Add to INSTALLED_APPS::
         'background_task',
         # ...
     )
-    
+
 Migrate your database::
 
     python manage.py makemigrations background_task
@@ -87,7 +87,7 @@ You can specify a verbose name and a creator when scheduling a task::
 
 The creator is stored as a ``GenericForeignKey``, so any model may be used.
 
-To get the functions decorated by ``background`` picked up by the auto discovery mechanism,  they must be placed in a file named ``tasks.py`` in your module, eg. ``myapp/tasks.py``. 
+To get the functions decorated by ``background`` picked up by the auto discovery mechanism,  they must be placed in a file named ``tasks.py`` in your module, eg. ``myapp/tasks.py``.
 
 Repeating Tasks
 ===============
@@ -135,10 +135,11 @@ Settings
 
 There are a few settings options that can be set in your `settings.py` file.
 
-* `MAX_ATTEMPTS` - controls how many times a task will be attempted (default 25)
-* `MAX_RUN_TIME` - maximum possible task run time, after which tasks will be unlocked and tried again (default 3600 seconds)
-* Set ``BACKGROUND_TASK_RUN_ASYNC = True`` in the project setting will run the tasks asynchronous. This means the tasks will be processed in parallel (at the same time) instead of processing one by one (one after the other).
-* `BACKGROUND_TASK_ASYNC_THREADS` - Specifies number of concurrent threads. Default is None, that means ``os.cpu_count() or 1``.
+* ``MAX_ATTEMPTS`` - controls how many times a task will be attempted (default 25)
+* ``MAX_RUN_TIME`` - maximum possible task run time, after which tasks will be unlocked and tried again (default 3600 seconds)
+* ``BACKGROUND_TASK_RUN_ASYNC`` - If ``True``, will run the tasks asynchronous. This means the tasks will be processed in parallel (at the same time) instead of processing one by one (one after the other).
+* ``BACKGROUND_TASK_ASYNC_THREADS`` - Specifies number of concurrent threads. Default is ``multiprocessing.cpu_count()``.
+* ``BACKGROUND_TASK_PRIORITY_ORDERING`` - Control the ordering of tasks in the queue. Default is ``"DESC"`` (tasks with a higher number are processed first). Choose `ASC` to switch to the "niceness_" odering. A niceness of −20 is the highest priority and 19 is the lowest priority.
 
 Task errors
 ===========
@@ -171,3 +172,4 @@ Hiroaki Nakamura has written an example project demonstrating how django-backgro
 .. _django-compat:  https://github.com/arteria/django-compat
 .. _25: https://github.com/arteria/django-background-tasks/issues/25
 .. _here: https://github.com/hnakamur/django-background-tasks-example/
+.. _niceness: https://en.wikipedia.org/wiki/Nice_(Unix)

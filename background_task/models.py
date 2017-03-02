@@ -91,7 +91,8 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         if queue:
             qs = qs.filter(queue=queue)
         ready = qs.filter(run_at__lte=now, failed_at=None)
-        ready = ready.order_by('-priority', 'run_at')
+        _priority_ordering = '{}priority'.format(app_settings.BACKGROUND_TASK_PRIORITY_ORDERING)
+        ready = ready.order_by(_priority_ordering, 'run_at')
 
         if app_settings.BACKGROUND_TASK_RUN_ASYNC:
             currently_locked = self.locked(now).count()

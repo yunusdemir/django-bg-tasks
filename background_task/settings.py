@@ -42,4 +42,20 @@ class AppSettings(object):
         """Specify number of concurrent threads."""
         return getattr(settings, 'BACKGROUND_TASK_ASYNC_THREADS', cpu_count)
 
+    @property
+    def BACKGROUND_TASK_PRIORITY_ORDERING(self):
+        """
+        Control the ordering of tasks in the queue.
+        Choose either `DESC` or `ASC`.
+
+        https://en.m.wikipedia.org/wiki/Nice_(Unix)
+        A niceness of −20 is the highest priority and 19 is the lowest priority. The default niceness for processes is inherited from its parent process and is usually 0.
+        """
+        order = getattr(settings, 'BACKGROUND_TASK_PRIORITY_ORDERING', 'DESC')
+        if order == 'ASC':
+            prefix = ''
+        else:
+            prefix = '-'
+        return prefix
+
 app_settings = AppSettings()
