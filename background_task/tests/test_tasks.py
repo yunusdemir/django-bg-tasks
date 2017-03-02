@@ -610,12 +610,6 @@ class MaxAttemptsTestCase(TransactionTestCase):
 
     @override_settings(MAX_ATTEMPTS=1)
     def test_max_attempts_one(self):
-        print settings.MAX_ATTEMPTS
-        print settings.MAX_ATTEMPTS
-        print settings.MAX_ATTEMPTS
-        print settings.MAX_ATTEMPTS
-        print settings.MAX_ATTEMPTS
-        print settings.MAX_ATTEMPTS
         self.assertEqual(settings.MAX_ATTEMPTS, 1)
         self.assertEqual(Task.objects.count(), 2)
 
