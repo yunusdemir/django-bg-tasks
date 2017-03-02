@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import random
 import sys
 import time
 
@@ -84,5 +85,9 @@ class Command(BaseCommand):
 
         while (duration <= 0) or (time.time() - start_time) <= duration:
             if not self._tasks.run_next_task(queue):
+                # there were no tasks in the queue, let's recover.
                 logger.debug('waiting for tasks')
                 time.sleep(sleep)
+            else:
+                # there were some tasks to process, let's check if there is more work to do after a little break.
+                time.sleep(random.uniform(0.5, 1.5))

@@ -9,10 +9,11 @@ from django.test.testcases import TransactionTestCase
 from django.conf import settings
 from django.utils import timezone
 
-from background_task.tasks import tasks, TaskSchedule, TaskProxy, BACKGROUND_TASK_RUN_ASYNC
+from background_task.tasks import tasks, TaskSchedule, TaskProxy
 from background_task.models import Task
 from background_task.models_completed import CompletedTask
 from background_task import background
+from background_task.settings import app_settings
 
 _recorded = []
 
@@ -24,7 +25,7 @@ def mocked_run_task(name, args=None, kwargs=None):
     Otherwise we run into a locked database.
     """
     val = tasks.run_task(name, args, kwargs)
-    if BACKGROUND_TASK_RUN_ASYNC:
+    if app_settings.BACKGROUND_TASK_RUN_ASYNC:
         time.sleep(1)
     return val
 
@@ -36,7 +37,7 @@ def mocked_run_next_task(queue=None):
     Otherwise we run into a locked database.
     """
     val = tasks.run_next_task(queue)
-    if BACKGROUND_TASK_RUN_ASYNC:
+    if app_settings.BACKGROUND_TASK_RUN_ASYNC:
         time.sleep(1)
     return val
 
@@ -339,13 +340,12 @@ class TestTaskModel(TransactionTestCase):
         self.failUnless(task.lock('otherlock') is None)
 
     def test_lock_expired(self):
-        settings.MAX_RUN_TIME = 60
         task = Task.objects.new_task('mytask')
         task.save()
         locked_task = task.lock('mylock')
 
         # force expire the lock
-        expire_by = timedelta(seconds=(settings.MAX_RUN_TIME + 2))
+        expire_by = timedelta(seconds=(app_settings.BACKGROUND_TASK_MAX_RUN_TIME + 2))
         locked_task.locked_at = locked_task.locked_at - expire_by
         locked_task.save()
 
@@ -397,9 +397,6 @@ class TestTasks(TransactionTestCase):
 
     def setUp(self):
         super(TestTasks, self).setUp()
-
-        settings.MAX_RUN_TIME = 60
-        settings.MAX_ATTEMPTS = 25
 
         @tasks.background(name='set_fields')
         def set_fields(**fields):
@@ -492,7 +489,7 @@ class TestTasks(TransactionTestCase):
         self.failIf(hasattr(self, 'lock_overridden'))
 
         # put lot time into past
-        expire_by = timedelta(seconds=(settings.MAX_RUN_TIME + 2))
+        expire_by = timedelta(seconds=(app_settings.BACKGROUND_TASK_MAX_RUN_TIME + 2))
         locked_task.locked_at = locked_task.locked_at - expire_by
         locked_task.save()
 
@@ -528,7 +525,6 @@ class TestTasks(TransactionTestCase):
         def default_schedule_used_for_priority():
             pass
 
-        now = timezone.now()
         default_schedule_used_for_priority()
 
         all_tasks = Task.objects.all()
@@ -565,7 +561,7 @@ class TestTasks(TransactionTestCase):
 
         self.failUnless(task.failed_at is None)
 
-        task.attempts = settings.MAX_ATTEMPTS
+        task.attempts = app_settings.BACKGROUND_TASK_MAX_ATTEMPTS
         task.save()
 
         # task should be scheduled to run now
@@ -612,32 +608,32 @@ class MaxAttemptsTestCase(TransactionTestCase):
         self.task1_id = self.task1.id
         self.task2_id = self.task2.id
 
+    @override_settings(MAX_ATTEMPTS=1)
     def test_max_attempts_one(self):
-        with self.settings(MAX_ATTEMPTS=1):
-            self.assertEqual(settings.MAX_ATTEMPTS, 1)
-            self.assertEqual(Task.objects.count(), 2)
+        self.assertEqual(settings.MAX_ATTEMPTS, 1)
+        self.assertEqual(Task.objects.count(), 2)
 
-            run_next_task()
-            self.assertEqual(Task.objects.count(), 1)
-            self.assertEqual(Task.objects.all()[0].id, self.task2_id)
-            self.assertEqual(CompletedTask.objects.count(), 1)
-            completed_task = CompletedTask.objects.all()[0]
-            self.assertEqual(completed_task.attempts, 1)
-            self.assertEqual(completed_task.task_name, self.task1.task_name)
-            self.assertEqual(completed_task.task_params, self.task1.task_params)
-            self.assertIsNotNone(completed_task.last_error)
-            self.assertIsNotNone(completed_task.failed_at)
+        run_next_task()
+        self.assertEqual(Task.objects.count(), 1)
+        self.assertEqual(Task.objects.all()[0].id, self.task2_id)
+        self.assertEqual(CompletedTask.objects.count(), 1)
+        completed_task = CompletedTask.objects.all()[0]
+        self.assertEqual(completed_task.attempts, 1)
+        self.assertEqual(completed_task.task_name, self.task1.task_name)
+        self.assertEqual(completed_task.task_params, self.task1.task_params)
+        self.assertIsNotNone(completed_task.last_error)
+        self.assertIsNotNone(completed_task.failed_at)
 
-            run_next_task()
-            self.assertEqual(Task.objects.count(), 0)
-            self.assertEqual(CompletedTask.objects.count(), 2)
+        run_next_task()
+        self.assertEqual(Task.objects.count(), 0)
+        self.assertEqual(CompletedTask.objects.count(), 2)
 
+    @override_settings(MAX_ATTEMPTS=2)
     def test_max_attempts_two(self):
-        with self.settings(MAX_ATTEMPTS=2):
-            self.assertEqual(settings.MAX_ATTEMPTS, 2)
-            run_next_task()
-            self.assertEqual(Task.objects.count(), 2)
-            self.assertEqual(CompletedTask.objects.count(), 0)
+        self.assertEqual(settings.MAX_ATTEMPTS, 2)
+        run_next_task()
+        self.assertEqual(Task.objects.count(), 2)
+        self.assertEqual(CompletedTask.objects.count(), 0)
 
 
 class ArgumentsWithDictTestCase(TransactionTestCase):

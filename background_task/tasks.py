@@ -1,32 +1,24 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 from datetime import datetime, timedelta
+from multiprocessing.pool import ThreadPool
 import logging
 import os
 import sys
-import threading
-
-from django.utils.encoding import python_2_unicode_compatible
-from django.utils import timezone
-from django.conf import settings
 
 from compat import atomic
 from compat import import_module
-
-from multiprocessing.pool import ThreadPool
+from django.utils import timezone
+from django.utils.encoding import python_2_unicode_compatible
 
 from background_task.exceptions import BackgroundTaskError
 from background_task.models import Task
+from background_task.settings import app_settings
 from background_task.signals import task_created, task_error, task_successful
 
 logger = logging.getLogger(__name__)
-
-
-BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False)
-BACKGROUND_TASK_ASYNC_THREADS = getattr(settings, 'BACKGROUND_TASK_ASYNC_THREADS', None)
-
-
-_thread_pool = ThreadPool(processes=BACKGROUND_TASK_ASYNC_THREADS)
+_thread_pool = ThreadPool(processes=app_settings.BACKGROUND_TASK_ASYNC_THREADS)
 
 
 def bg_runner(proxy_task, task=None, *args, **kwargs):
@@ -112,7 +104,7 @@ class Tasks(object):
         else:
             task = None
         proxy_task = self._tasks[task_name]
-        if BACKGROUND_TASK_RUN_ASYNC:
+        if app_settings.BACKGROUND_TASK_RUN_ASYNC:
             _thread_pool.apply_async(func=self._bg_runner, args=(proxy_task, task) + tuple(args), kwds=kwargs)
         else:
             self._bg_runner(proxy_task, task, *args, **kwargs)
