@@ -1,24 +1,21 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
+from hashlib import sha1
+import django
+import inspect
+import json
+import logging
+import traceback
+
+from compat import python_2_unicode_compatible
+from compat import StringIO
+from compat.models import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
-from django.conf import settings
-import django
-import inspect
-import multiprocessing
-
-
 from django.utils import timezone
-from datetime import timedelta
 
-from hashlib import sha1
-import traceback
-import logging
-from compat import StringIO
-from compat import python_2_unicode_compatible
-from compat.models import GenericForeignKey
-import json
-
+from background_task.settings import app_settings
 from background_task.signals import task_failed, task_rescheduled
 
 
@@ -96,12 +93,9 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         ready = qs.filter(run_at__lte=now, failed_at=None)
         ready = ready.order_by('-priority', 'run_at')
 
-        BACKGROUND_TASK_RUN_ASYNC = getattr(settings, 'BACKGROUND_TASK_RUN_ASYNC', False)
-        BACKGROUND_TASK_ASYNC_THREADS = getattr(settings, 'BACKGROUND_TASK_ASYNC_THREADS', multiprocessing.cpu_count())
-
-        if BACKGROUND_TASK_RUN_ASYNC:
+        if app_settings.BACKGROUND_TASK_RUN_ASYNC:
             currently_locked = self.locked(now).count()
-            count = BACKGROUND_TASK_ASYNC_THREADS - currently_locked
+            count = app_settings.BACKGROUND_TASK_ASYNC_THREADS - currently_locked
             if count > 0:
                 ready = ready[:count]
             else:
@@ -110,14 +104,14 @@ class TaskManager(six.with_metaclass(GetQuerySetMetaclass, models.Manager)):
         return ready
 
     def unlocked(self, now):
-        max_run_time = getattr(settings, 'MAX_RUN_TIME', 3600)
+        max_run_time = app_settings.BACKGROUND_TASK_MAX_RUN_TIME
         qs = self.get_queryset()
         expires_at = now - timedelta(seconds=max_run_time)
         unlocked = Q(locked_by=None) | Q(locked_at__lt=expires_at)
         return qs.filter(unlocked)
 
     def locked(self, now):
-        max_run_time = getattr(settings, 'MAX_RUN_TIME', 3600)
+        max_run_time = app_settings.BACKGROUND_TASK_MAX_RUN_TIME
         qs = self.get_queryset()
         expires_at = now - timedelta(seconds=max_run_time)
         locked = Q(locked_by__isnull=False) | Q(locked_at__gt=expires_at)
@@ -243,7 +237,7 @@ class Task(models.Model):
         self.save()
 
     def has_reached_max_attempts(self):
-        max_attempts = getattr(settings, 'MAX_ATTEMPTS', 25)
+        max_attempts = app_settings.BACKGROUND_TASK_MAX_ATTEMPTS
         return self.attempts >= max_attempts
 
     def is_repeating_task(self):
