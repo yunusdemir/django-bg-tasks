@@ -6,9 +6,9 @@ import time
 
 from django import VERSION
 from django.core.management.base import BaseCommand
-from django.db import close_connection
 
 from background_task.tasks import tasks, autodiscover
+from compat import close_connection
 
 
 logger = logging.getLogger(__name__)
