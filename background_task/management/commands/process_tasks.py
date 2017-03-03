@@ -6,6 +6,7 @@ import time
 
 from django import VERSION
 from django.core.management.base import BaseCommand
+from django.db import close_connection
 
 from background_task.tasks import tasks, autodiscover
 
@@ -86,6 +87,7 @@ class Command(BaseCommand):
         while (duration <= 0) or (time.time() - start_time) <= duration:
             if not self._tasks.run_next_task(queue):
                 # there were no tasks in the queue, let's recover.
+                close_connection()
                 logger.debug('waiting for tasks')
                 time.sleep(sleep)
             else:
