@@ -11,5 +11,6 @@ Contributors
 * James Mason (bear454)
 * Pavel Zagrebelin (Zagrebelin)
 * Stephen Brown (december1981)
+* Adam Johnson (adamchainz)
 
 Your name could stand here :)
