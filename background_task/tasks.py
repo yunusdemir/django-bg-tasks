@@ -15,7 +15,7 @@ from django.utils.encoding import python_2_unicode_compatible
 from background_task.exceptions import BackgroundTaskError
 from background_task.models import Task
 from background_task.settings import app_settings
-from background_task.signals import task_created, task_error, task_successful
+from background_task import signals
 
 logger = logging.getLogger(__name__)
 _thread_pool = ThreadPool(processes=app_settings.BACKGROUND_TASK_ASYNC_THREADS)
@@ -26,6 +26,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
     Executes the function attached to task. Used to enable threads.
     If a Task instance is provided, args and kwargs are ignored and retrieved from the Task itself.
     """
+    signals.task_started.send(Task)
     try:
         func = getattr(proxy_task, 'task_function', None)
         if isinstance(task, Task):
@@ -46,7 +47,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             # task done, so can delete it
             task.increment_attempts()
             completed = task.create_completed_task()
-            task_successful.send(sender=task.__class__, task_id=task.id, completed_task=completed)
+            signals.task_successful.send(sender=task.__class__, task_id=task.id, completed_task=completed)
             task.create_repetition()
             task.delete()
             logger.info('Ran task and deleting %s', task)
@@ -55,9 +56,10 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
         t, e, traceback = sys.exc_info()
         if task:
             logger.error('Rescheduling %s', task, exc_info=(t, e, traceback))
-            task_error.send(sender=ex.__class__, task=task)
+            signals.task_error.send(sender=ex.__class__, task=task)
             task.reschedule(t, e, traceback)
         del traceback
+    signals.task_finished.send(Task)
 
 
 class Tasks(object):
@@ -210,7 +212,7 @@ class DBTaskRunner(object):
                     return
 
         task.save()
-        task_created.send(sender=self.__class__, task=task)
+        signals.task_created.send(sender=self.__class__, task=task)
         return task
 
     @atomic
