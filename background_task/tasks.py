@@ -15,7 +15,7 @@ from django.utils.encoding import python_2_unicode_compatible
 from background_task.exceptions import BackgroundTaskError
 from background_task.models import Task
 from background_task.settings import app_settings
-from background_task.signals import task_created, task_error, task_successful
+from background_task import signals
 
 logger = logging.getLogger(__name__)
 _thread_pool = ThreadPool(processes=app_settings.BACKGROUND_TASK_ASYNC_THREADS)
@@ -46,7 +46,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             # task done, so can delete it
             task.increment_attempts()
             completed = task.create_completed_task()
-            task_successful.send(sender=task.__class__, task_id=task.id, completed_task=completed)
+            signals.task_successful.send(sender=task.__class__, task_id=task.id, completed_task=completed)
             task.create_repetition()
             task.delete()
             logger.info('Ran task and deleting %s', task)
@@ -55,7 +55,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
         t, e, traceback = sys.exc_info()
         if task:
             logger.error('Rescheduling %s', task, exc_info=(t, e, traceback))
-            task_error.send(sender=ex.__class__, task=task)
+            signals.task_error.send(sender=ex.__class__, task=task)
             task.reschedule(t, e, traceback)
         del traceback
 
@@ -210,7 +210,7 @@ class DBTaskRunner(object):
                     return
 
         task.save()
-        task_created.send(sender=self.__class__, task=task)
+        signals.task_created.send(sender=self.__class__, task=task)
         return task
 
     @atomic
