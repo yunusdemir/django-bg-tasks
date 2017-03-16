@@ -26,6 +26,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
     Executes the function attached to task. Used to enable threads.
     If a Task instance is provided, args and kwargs are ignored and retrieved from the Task itself.
     """
+    signals.task_started.send(Task)
     try:
         func = getattr(proxy_task, 'task_function', None)
         if isinstance(task, Task):
@@ -58,6 +59,7 @@ def bg_runner(proxy_task, task=None, *args, **kwargs):
             signals.task_error.send(sender=ex.__class__, task=task)
             task.reschedule(t, e, traceback)
         del traceback
+    signals.task_finished.send(Task)
 
 
 class Tasks(object):
