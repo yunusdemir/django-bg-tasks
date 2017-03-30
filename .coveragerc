@@ -1,0 +1,4 @@
+[run]
+source = background_task
+omit =
+    background_task/tests/*
