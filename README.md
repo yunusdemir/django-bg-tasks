@@ -18,4 +18,4 @@ There are two parts to using background tasks:
 
 
 ## Docs
-See http://django-background-tasks.readthedocs.io/en/stable/.
+See http://django-background-tasks.readthedocs.io/en/latest/.
