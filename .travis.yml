@@ -1,16 +1,58 @@
-sudo: false
 language: python
-python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
+
+# this list can be easily generated py running `tox -l`
+env:
+    - TOX_ENV=py27-django18-sync
+    - TOX_ENV=py27-django18-async
+    - TOX_ENV=py27-django19-sync
+    - TOX_ENV=py27-django19-async
+    - TOX_ENV=py27-django110-sync
+    - TOX_ENV=py27-django110-async
+    - TOX_ENV=py34-django18-sync
+    - TOX_ENV=py34-django18-async
+    - TOX_ENV=py34-django19-sync
+    - TOX_ENV=py34-django19-async
+    - TOX_ENV=py34-django110-sync
+    - TOX_ENV=py34-django110-async
+    - TOX_ENV=py35-django18-sync
+    - TOX_ENV=py35-django18-async
+    - TOX_ENV=py35-django19-sync
+    - TOX_ENV=py35-django19-async
+    - TOX_ENV=py35-django110-sync
+    - TOX_ENV=py35-django110-async
+
+# Currently, Python 3.5 Interpreter is only available when it is specified
+# in the travis python section. So we have to work around this with this include
+# GitHub issue: https://github.com/travis-ci/travis-ci/issues/4794
+matrix:
+  include:
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django18-sync
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django18-async
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django19-sync
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django19-async
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django110-sync
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django110-async
 
 install:
     - pip install tox-travis
     - pip install coveralls
 
 script:
-    - tox
+    - tox -e $TOX_ENV
+
+sudo: false
 
 after_success:
     coveralls
