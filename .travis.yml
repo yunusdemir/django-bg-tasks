@@ -28,13 +28,22 @@ matrix:
   include:
   - python: "3.5"
     env:
-      - TOX_ENV=py35-django18
+      - TOX_ENV=py35-django18-sync
   - python: "3.5"
     env:
-      - TOX_ENV=py35-django19
+      - TOX_ENV=py35-django18-async
   - python: "3.5"
     env:
-      - TOX_ENV=py35-django110
+      - TOX_ENV=py35-django19-sync
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django19-async
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django110-sync
+  - python: "3.5"
+    env:
+      - TOX_ENV=py35-django110-async
 
 install:
     - pip install tox-travis
