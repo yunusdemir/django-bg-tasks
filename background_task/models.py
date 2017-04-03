@@ -219,12 +219,15 @@ class Task(models.Model):
         """
         Check if the locked_by process is still running.
         """
-        try:
-            # won't kill the process. kill is a bad named system call
-            os.kill(int(self.locked_by), 0)
-            return True
-        except:
-            return False
+        if self.locked_by:
+            try:
+                # won't kill the process. kill is a bad named system call
+                os.kill(int(self.locked_by), 0)
+                return True
+            except:
+                return False
+        else:
+            return None
     locked_by_pid_running.boolean = True
 
     def has_error(self):
