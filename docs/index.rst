@@ -185,6 +185,8 @@ Tests
 
 You can run the test suite on all supported versions of Django and Python:
 
+.. code-block:: bash
+
     $ tox
 
 
