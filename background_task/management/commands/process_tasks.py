@@ -8,6 +8,7 @@ from django import VERSION
 from django.core.management.base import BaseCommand
 
 from background_task.tasks import tasks, autodiscover
+from background_task.utils import GracefulKiller
 from compat import close_connection
 
 
@@ -76,6 +77,7 @@ class Command(BaseCommand):
         sleep = options.pop('sleep', 5.0)
         queue = options.pop('queue', None)
         log_std = options.pop('log_std', False)
+        killer = GracefulKiller()
 
         if log_std:
             _configure_log_std()
@@ -85,6 +87,10 @@ class Command(BaseCommand):
         start_time = time.time()
 
         while (duration <= 0) or (time.time() - start_time) <= duration:
+            if killer.kill_now:
+                # shutting down gracefully
+                break
+
             if not self._tasks.run_next_task(queue):
                 # there were no tasks in the queue, let's recover.
                 close_connection()
