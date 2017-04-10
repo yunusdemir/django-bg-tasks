@@ -8,7 +8,7 @@ from django import VERSION
 from django.core.management.base import BaseCommand
 
 from background_task.tasks import tasks, autodiscover
-from background_task.utils import GracefulKiller
+from background_task.utils import SignalManager
 from compat import close_connection
 
 
@@ -77,7 +77,7 @@ class Command(BaseCommand):
         sleep = options.pop('sleep', 5.0)
         queue = options.pop('queue', None)
         log_std = options.pop('log_std', False)
-        killer = GracefulKiller()
+        sig_manager = SignalManager()
 
         if log_std:
             _configure_log_std()
@@ -87,7 +87,7 @@ class Command(BaseCommand):
         start_time = time.time()
 
         while (duration <= 0) or (time.time() - start_time) <= duration:
-            if killer.kill_now:
+            if sig_manager.kill_now:
                 # shutting down gracefully
                 break
 
@@ -98,4 +98,4 @@ class Command(BaseCommand):
                 time.sleep(sleep)
             else:
                 # there were some tasks to process, let's check if there is more work to do after a little break.
-                time.sleep(random.uniform(0.5, 1.5))
+                time.sleep(random.uniform(sig_manager.time_to_wait[0], sig_manager.time_to_wait[1]))
