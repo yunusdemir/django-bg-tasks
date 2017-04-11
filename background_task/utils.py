@@ -12,7 +12,7 @@ class SignalManager(object):
     time_to_wait = TTW_SLOW
 
     def __init__(self):
-        signal.signal(signal.SIGSTOP, self.exit_gracefully)
+        signal.signal(signal.SIGTSTP, self.exit_gracefully)
         signal.signal(signal.SIGUSR1, self.speed_up)
         signal.signal(signal.SIGUSR2, self.slow_down)
 
