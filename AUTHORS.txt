@@ -12,5 +12,6 @@ Contributors
 * Pavel Zagrebelin (Zagrebelin)
 * Stephen Brown (december1981)
 * Adam Johnson (adamchainz)
+* (kherrett)
 
 Your name could stand here :)
