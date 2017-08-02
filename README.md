@@ -1,6 +1,7 @@
 # Django Background Tasks
 
 [![Build Status](https://travis-ci.org/arteria/django-background-tasks.svg?branch=master)](https://travis-ci.org/arteria/django-background-tasks)
+[![Coverage Status](https://coveralls.io/repos/arteria/django-background-tasks/badge.svg?branch=master&service=github)](https://coveralls.io/github/arteria/django-background-tasks?
 [![Documentation Status](https://readthedocs.org/projects/django-background-tasks/badge/?version=latest)](http://django-background-tasks.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/django-background-tasks.svg)](https://pypi.python.org/pypi/django-background-tasks)
 
