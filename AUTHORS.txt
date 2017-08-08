@@ -13,5 +13,6 @@ Contributors
 * Stephen Brown (december1981)
 * Adam Johnson (adamchainz)
 * (kherrett)
+* Johannes Dillmann (kleingeist)
 
 Your name could stand here :)
