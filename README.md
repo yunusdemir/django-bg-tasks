@@ -20,3 +20,7 @@ There are two parts to using background tasks:
 
 ## Docs
 See http://django-background-tasks.readthedocs.io/en/latest/.
+
+
+| django-background-tasks is free software. If you find it useful and would like to give back, please consider to make a donation using [Bitcoin](https://blockchain.info/payment_request?address=1AJkbQdcNkrHzxi91mB1kkPxh4t4BJ4hu4) or [PayPal](https://www.paypal.me/arteriagmbh). Thank you! |
+| ----- |
