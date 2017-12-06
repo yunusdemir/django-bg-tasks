@@ -782,7 +782,8 @@ class PriorityTestCase(TransactionTestCase):
         available = Task.objects.find_available()
         self.assertEqual(available.count(), 2)
         self.assertEqual(available.first(), self.high_priority_task)
-        self.assertEqual(available.last(), self.low_priority_task)
+        # Using a list here. QuerySet.last() is prohibited after slicing (new in Django 2.0)
+        self.assertEqual(list(available)[-1], self.low_priority_task)
 
         self.assertFalse(CompletedTask.objects.filter(priority=self.high_priority_task.priority).exists())
         self.assertFalse(CompletedTask.objects.filter(priority=self.low_priority_task.priority).exists())
