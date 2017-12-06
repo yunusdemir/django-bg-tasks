@@ -14,42 +14,30 @@ env:
 # GitHub issue: https://github.com/travis-ci/travis-ci/issues/4794
 matrix:
   include:
-  - python: "3.4"
+  - python: "3.6"
     env:
-      - TOX_ENV=py34-django18-sync
-  - python: "3.4"
+      - TOX_ENV=py36-django18-sync
+  - python: "3.6"
     env:
-      - TOX_ENV=py34-django18-async
-  - python: "3.4"
+      - TOX_ENV=py36-django18-async
+  - python: "3.6"
     env:
-      - TOX_ENV=py34-django19-sync
-  - python: "3.4"
+      - TOX_ENV=py36-django19-sync
+  - python: "3.6"
     env:
-      - TOX_ENV=py34-django19-async
-  - python: "3.4"
+      - TOX_ENV=py36-django19-async
+  - python: "3.6"
     env:
-      - TOX_ENV=py34-django110-sync
-  - python: "3.4"
+      - TOX_ENV=py36-django110-sync
+  - python: "3.6"
     env:
-      - TOX_ENV=py34-django110-async
-  - python: "3.5"
+      - TOX_ENV=py36-django110-async
+  - python: "3.6"
     env:
-      - TOX_ENV=py35-django18-sync
-  - python: "3.5"
+      - TOX_ENV=py36-django20-sync
+  - python: "3.6"
     env:
-      - TOX_ENV=py35-django18-async
-  - python: "3.5"
-    env:
-      - TOX_ENV=py35-django19-sync
-  - python: "3.5"
-    env:
-      - TOX_ENV=py35-django19-async
-  - python: "3.5"
-    env:
-      - TOX_ENV=py35-django110-sync
-  - python: "3.5"
-    env:
-      - TOX_ENV=py35-django110-async
+      - TOX_ENV=py36-django20-async
 
 install:
     - pip install tox-travis
