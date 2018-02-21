@@ -190,6 +190,13 @@ You can run the test suite on all supported versions of Django and Python:
     $ tox
 
 
+Contributing
+============
+
+Anyone and everyone is welcome to contribute. Please take a moment to review the `guidelines for contributing
+<https://github.com/arteria/django-background-tasks/blob/master/CONTRIBUTING.md>`_.
+
+
 .. _Django: http://www.djangoproject.com/
 .. _DelayedJob: http://github.com/tobi/delayed_job
 .. _supervisord: http://supervisord.org/
