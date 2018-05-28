@@ -8,7 +8,6 @@ import logging
 import os
 import sys
 
-from compat import atomic
 from django.utils import timezone
 from django.utils.six import python_2_unicode_compatible
 
@@ -234,7 +233,6 @@ class DBTaskRunner(object):
         signals.task_created.send(sender=self.__class__, task=task)
         return task
 
-    @atomic
     def get_task_to_run(self, tasks, queue=None):
         available_tasks = [task for task in Task.objects.find_available(queue)
                            if task.task_name in tasks._tasks][:5]
@@ -245,20 +243,14 @@ class DBTaskRunner(object):
                 return locked_task
         return None
 
-    @atomic
     def run_task(self, tasks, task):
         logger.info('Running %s', task)
         tasks.run_task(task)
 
-    @atomic
     def run_next_task(self, tasks, queue=None):
-        # we need to commit to make sure
-        # we can see new tasks as they arrive
         task = self.get_task_to_run(tasks, queue)
-        # transaction.commit()
         if task:
             self.run_task(tasks, task)
-            # transaction.commit()
             return True
         else:
             return False
