@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import time
 from datetime import timedelta, datetime
-from mock import patch
+from mock import patch, Mock
 
+from django.db.utils import OperationalError
 from django.contrib.auth.models import User
 from django.test import override_settings
 from django.test.testcases import TransactionTestCase
@@ -869,4 +870,28 @@ class LoggingTestCase(TransactionTestCase):
         run_next_task()
         self.assertFalse(mock_logger.warning.called)
         self.assertTrue(mock_logger.error.called)
+        self.assertFalse(mock_logger.critical.called)
+
+
+class DatabaseOutageTestCase(TransactionTestCase):
+
+    def setUp(self):
+        @tasks.background()
+        def my_task(*args, **kwargs):
+            pass
+        self.my_task = my_task
+
+    @patch('background_task.tasks.logger')
+    def test_dropped_db_connection(self, mock_logger):
+        self.my_task() # Entered into database successfully
+
+        cursor_wrapper = Mock()
+        cursor_wrapper.side_effect = OperationalError
+
+        # Force django cursor to throw OperationalError as if connection were dropped
+        with patch("django.db.backends.utils.CursorWrapper", cursor_wrapper) as patched_method:
+            run_next_task()
+
+        self.assertTrue(mock_logger.warning.called)
+        self.assertFalse(mock_logger.error.called)
         self.assertFalse(mock_logger.critical.called)
