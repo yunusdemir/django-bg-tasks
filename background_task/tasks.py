@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 
+from django.db.utils import OperationalError
 from django.utils import timezone
 from django.utils.six import python_2_unicode_compatible
 
@@ -234,14 +235,17 @@ class DBTaskRunner(object):
         return task
 
     def get_task_to_run(self, tasks, queue=None):
-        available_tasks = [task for task in Task.objects.find_available(queue)
-                           if task.task_name in tasks._tasks][:5]
-        for task in available_tasks:
-            # try to lock task
-            locked_task = task.lock(self.worker_name)
-            if locked_task:
-                return locked_task
-        return None
+        try:
+            available_tasks = [task for task in Task.objects.find_available(queue)
+                               if task.task_name in tasks._tasks][:5]
+            for task in available_tasks:
+                # try to lock task
+                locked_task = task.lock(self.worker_name)
+                if locked_task:
+                    return locked_task
+            return None
+        except OperationalError:
+            logger.warning('Failed to retrieve tasks. Database unreachable.')
 
     def run_task(self, tasks, task):
         logger.info('Running %s', task)
