@@ -14,5 +14,6 @@ Contributors
 * Adam Johnson (adamchainz)
 * (kherrett)
 * Johannes Dillmann (kleingeist)
+* TheLovinator1
 
 Your name could stand here :)
