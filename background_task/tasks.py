@@ -278,6 +278,7 @@ class TaskProxy(object):
         creator = kwargs.pop('creator', None)
         repeat = kwargs.pop('repeat', None)
         repeat_until = kwargs.pop('repeat_until', None)
+        remove_existing_tasks = kwargs.pop('remove_existing_tasks', None)
         return self.runner.schedule(self.name, args, kwargs, run_at, priority,
                                     action, queue, verbose_name, creator,
                                     repeat, repeat_until, remove_existing_tasks)
