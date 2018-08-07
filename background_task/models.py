@@ -22,10 +22,6 @@ from background_task.signals import task_failed, task_rescheduled
 logger = logging.getLogger(__name__)
 
 
-# inspired by http://github.com/tobi/delayed_job
-#
-
-
 class TaskQuerySet(models.QuerySet):
 
     def created_by(self, creator):

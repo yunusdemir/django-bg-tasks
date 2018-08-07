@@ -87,7 +87,8 @@ class Tasks(object):
         self._bg_runner = bg_runner
         self._pool_runner = PoolRunner(bg_runner, app_settings.BACKGROUND_TASK_ASYNC_THREADS)
 
-    def background(self, name=None, schedule=None, queue=None):
+    def background(self, name=None, schedule=None, queue=None,
+                   remove_existing_tasks=False):
         '''
         decorator to turn a regular function into
         something that gets run asynchronously in
@@ -105,7 +106,8 @@ class Tasks(object):
             _name = name
             if not _name:
                 _name = '%s.%s' % (fn.__module__, fn.__name__)
-            proxy = self._task_proxy_class(_name, fn, schedule, queue, self._runner)
+            proxy = self._task_proxy_class(_name, fn, schedule, queue,
+                                           remove_existing_tasks, self._runner)
             self._tasks[_name] = proxy
             return proxy
         if fn:
@@ -118,7 +120,8 @@ class Tasks(object):
         if isinstance(task_name, Task):
             task = task_name
             task_name = task.task_name
-            # When we have a Task instance we do not need args and kwargs, but they are kept for backward compatibility
+            # When we have a Task instance we do not need args and kwargs, but
+            # they are kept for backward compatibility
             args = []
             kwargs = {}
         else:
@@ -150,6 +153,7 @@ class TaskSchedule(object):
         priority = None
         run_at = None
         action = None
+
         if schedule:
             if isinstance(schedule, (int, timedelta, datetime)):
                 run_at = schedule
@@ -157,6 +161,7 @@ class TaskSchedule(object):
                 run_at = schedule.get('run_at', None)
                 priority = schedule.get('priority', None)
                 action = schedule.get('action', None)
+
         return TaskSchedule(run_at=run_at, priority=priority, action=action)
 
     def merge(self, schedule):
@@ -187,6 +192,7 @@ class TaskSchedule(object):
     def action(self):
         return self._action or TaskSchedule.SCHEDULE
 
+
     def __repr__(self):
         return 'TaskSchedule(run_at=%s, priority=%s)' % (self._run_at,
                                                          self._priority)
@@ -211,11 +217,9 @@ class DBTaskRunner(object):
                  verbose_name=None, creator=None,
                  repeat=None, repeat_until=None, remove_existing_tasks=False):
         '''Simply create a task object in the database'''
-
         task = Task.objects.new_task(task_name, args, kwargs, run_at, priority,
                                      queue, verbose_name, creator, repeat,
                                      repeat_until, remove_existing_tasks)
-
         if action != TaskSchedule.SCHEDULE:
             task_hash = task.task_hash
             now = timezone.now()
@@ -260,12 +264,14 @@ class DBTaskRunner(object):
 
 @python_2_unicode_compatible
 class TaskProxy(object):
-    def __init__(self, name, task_function, schedule, queue, runner):
+    def __init__(self, name, task_function, schedule, queue, remove_existing_tasks, runner):
         self.name = name
         self.now = self.task_function = task_function
         self.runner = runner
         self.schedule = TaskSchedule.create(schedule)
         self.queue = queue
+        self.remove_existing_tasks = remove_existing_tasks
+
 
     def __call__(self, *args, **kwargs):
         schedule = kwargs.pop('schedule', None)
@@ -278,10 +284,12 @@ class TaskProxy(object):
         creator = kwargs.pop('creator', None)
         repeat = kwargs.pop('repeat', None)
         repeat_until = kwargs.pop('repeat_until', None)
-        remove_existing_tasks = kwargs.pop('remove_existing_tasks', None)
+        remove_existing_tasks =  kwargs.pop('remove_existing_tasks', self.remove_existing_tasks)
+
         return self.runner.schedule(self.name, args, kwargs, run_at, priority,
                                     action, queue, verbose_name, creator,
-                                    repeat, repeat_until, remove_existing_tasks)
+                                    repeat, repeat_until,
+                                    remove_existing_tasks)
 
     def __str__(self):
         return 'TaskProxy(%s)' % self.name
