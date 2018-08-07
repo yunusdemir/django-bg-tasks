@@ -15,5 +15,6 @@ Contributors
 * (kherrett)
 * Johannes Dillmann (kleingeist)
 * TheLovinator1
-
+* AMRivkin
+* jtimmons
 Your name could stand here :)
