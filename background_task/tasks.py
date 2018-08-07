@@ -207,12 +207,14 @@ class DBTaskRunner(object):
         self.worker_name = str(os.getpid())
 
     def schedule(self, task_name, args, kwargs, run_at=None,
-                 priority=0, action=TaskSchedule.SCHEDULE, queue=None, verbose_name=None, creator=None,
-                 repeat=None, repeat_until=None):
+                 priority=0, action=TaskSchedule.SCHEDULE, queue=None,
+                 verbose_name=None, creator=None,
+                 repeat=None, repeat_until=None, remove_existing_tasks=False):
         '''Simply create a task object in the database'''
 
-        task = Task.objects.new_task(task_name, args, kwargs,
-                                     run_at, priority, queue, verbose_name, creator, repeat, repeat_until)
+        task = Task.objects.new_task(task_name, args, kwargs, run_at, priority,
+                                     queue, verbose_name, creator, repeat,
+                                     repeat_until, remove_existing_tasks)
 
         if action != TaskSchedule.SCHEDULE:
             task_hash = task.task_hash
@@ -276,8 +278,10 @@ class TaskProxy(object):
         creator = kwargs.pop('creator', None)
         repeat = kwargs.pop('repeat', None)
         repeat_until = kwargs.pop('repeat_until', None)
-        return self.runner.schedule(self.name, args, kwargs, run_at, priority, action, queue,
-                                    verbose_name, creator, repeat, repeat_until)
+        remove_existing_tasks = kwargs.pop('remove_existing_tasks', None)
+        return self.runner.schedule(self.name, args, kwargs, run_at, priority,
+                                    action, queue, verbose_name, creator,
+                                    repeat, repeat_until, remove_existing_tasks)
 
     def __str__(self):
         return 'TaskProxy(%s)' % self.name
