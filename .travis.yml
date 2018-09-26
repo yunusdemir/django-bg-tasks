@@ -1,58 +1,41 @@
+sudo: false
 language: python
 
-# this list can be easily generated py running `tox -l`
-env:
-    - TOX_ENV=py27-django18-sync
-    - TOX_ENV=py27-django18-async
-    - TOX_ENV=py27-django19-sync
-    - TOX_ENV=py27-django19-async
-    - TOX_ENV=py27-django110-sync
-    - TOX_ENV=py27-django110-async
-
-# Currently, Python 3.5 Interpreter is only available when it is specified
-# in the travis python section. So we have to work around this with this include
-# GitHub issue: https://github.com/travis-ci/travis-ci/issues/4794
+# this list can be easily checked py running `tox -l`
 matrix:
   include:
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django18-sync
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django18-async
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django19-sync
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django19-async
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django110-sync
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django110-async
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django20-sync
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django20-async
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django21-sync
-  - python: "3.6"
-    env:
-      - TOX_ENV=py36-django21-async
+    - { python: "2.7", env: TOX_ENV=py27-django18-async }
+    - { python: "2.7", env: TOX_ENV=py27-django18-sync }
 
-install:
-    - pip install tox-travis
-    - pip install coveralls
+    - { python: "2.7", env: TOX_ENV=py27-django19-async }
+    - { python: "2.7", env: TOX_ENV=py27-django19-sync }
 
-script:
-    - tox -e $TOX_ENV
+    - { python: "2.7", env: TOX_ENV=py27-django110-async }
+    - { python: "2.7", env: TOX_ENV=py27-django110-sync }
 
-sudo: false
+    - { python: "2.7", env: TOX_ENV=py27-django111-async }
+    - { python: "2.7", env: TOX_ENV=py27-django111-sync }
 
-after_success:
-    coveralls
+    - { python: "3.6", env: TOX_ENV=py36-django18-async }
+    - { python: "3.6", env: TOX_ENV=py36-django18-sync }
+
+    - { python: "3.6", env: TOX_ENV=py36-django19-async }
+    - { python: "3.6", env: TOX_ENV=py36-django19-sync }
+
+    - { python: "3.6", env: TOX_ENV=py36-django110-async }
+    - { python: "3.6", env: TOX_ENV=py36-django110-sync }
+
+    - { python: "3.6", env: TOX_ENV=py36-django111-async }
+    - { python: "3.6", env: TOX_ENV=py36-django111-sync }
+
+    - { python: "3.6", env: TOX_ENV=py36-django20-async }
+    - { python: "3.6", env: TOX_ENV=py36-django20-sync }
+
+    - { python: "3.6", env: TOX_ENV=py36-django21-async }
+    - { python: "3.6", env: TOX_ENV=py36-django21-sync }
+
+install: pip install tox-travis coveralls
+
+script: tox -e $TOX_ENV
+
+after_success: coveralls
