@@ -44,7 +44,7 @@ Migrate your database:
 Supported versions and compatibility
 ====================================
 * Python: 2 & 3
-* Django: 1.8–2.0
+* Django: 1.8–2.1
 
 Full Django LTS to LTS compatibility through django-compat_.
 
