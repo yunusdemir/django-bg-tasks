@@ -38,6 +38,12 @@ matrix:
   - python: "3.6"
     env:
       - TOX_ENV=py36-django20-async
+  - python: "3.6"
+    env:
+      - TOX_ENV=py36-django21-sync
+  - python: "3.6"
+    env:
+      - TOX_ENV=py36-django21-async
 
 install:
     - pip install tox-travis
