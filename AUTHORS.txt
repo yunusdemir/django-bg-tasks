@@ -17,4 +17,6 @@ Contributors
 * TheLovinator1
 * AMRivkin
 * jtimmons
+* jedie
+* lorddaedra
 Your name could stand here :)
