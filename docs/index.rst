@@ -38,7 +38,6 @@ Migrate your database:
 
 .. code-block:: sh
 
-    python manage.py makemigrations background_task
     python manage.py migrate
 
 Supported versions and compatibility
