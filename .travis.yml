@@ -4,14 +4,20 @@ language: python
 # this list can be easily checked by running `tox -l`
 matrix:
   include:
+    - { python: "2.7", env: TOX_ENV=py27-django18-async }
+    - { python: "2.7", env: TOX_ENV=py27-django18-sync }
     - { python: "2.7", env: TOX_ENV=py27-django111-async }
     - { python: "2.7", env: TOX_ENV=py27-django111-sync }
 
+    - { python: "3.4", env: TOX_ENV=py34-django18-async }
+    - { python: "3.4", env: TOX_ENV=py34-django18-sync }
     - { python: "3.4", env: TOX_ENV=py34-django111-async }
     - { python: "3.4", env: TOX_ENV=py34-django111-sync }
     - { python: "3.4", env: TOX_ENV=py34-django20-sync }
     - { python: "3.4", env: TOX_ENV=py34-django20-async }
 
+    - { python: "3.5", env: TOX_ENV=py35-django18-async }
+    - { python: "3.5", env: TOX_ENV=py35-django18-sync }
     - { python: "3.5", env: TOX_ENV=py35-django111-async }
     - { python: "3.5", env: TOX_ENV=py35-django111-sync }
     - { python: "3.5", env: TOX_ENV=py35-django20-async }
