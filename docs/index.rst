@@ -48,6 +48,9 @@ Supported versions and compatibility
 
 Full Django LTS to LTS compatibility through django-compat_.
 
+*Note: Django 1.8 is an expired LTS release. It's not advisable to use this version of Django anymore.*
+
+
 Creating and registering tasks
 ==============================
 
