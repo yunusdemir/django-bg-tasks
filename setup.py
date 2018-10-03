@@ -9,7 +9,7 @@ setup(
     name='django-background-tasks',
     version=version,
     description='Database backed asynchronous task queue',
-    long_description=codecs.open('README.md', encoding='utf-8').read(),
+    long_description=codecs.open('README.rst', encoding='utf-8').read(),
     author='arteria GmbH, John Montgomery',
     author_email='admin@arteria.ch',
     url='http://github.com/arteria/django-background-tasks',
