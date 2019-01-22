@@ -130,7 +130,7 @@ If you run the command ``process_tasks`` with the option ``--queue <queue_name>`
 Scheduling the same task twice
 ==============================
 
-Normally, when you scheudle the exact same task twice, it will also be executed twice. If you want to remove existing tasks with the same parameters, you can set the parameter `remove_existing_tasks` to `True`:
+Normally, when you schedule the exact same task twice, it will also be executed twice. If you want to remove existing tasks with the same parameters, you can set the parameter `remove_existing_tasks` to `True`. Only tasks that are pending (not in execution) will be removed. 
 
 .. code-block:: python
 
