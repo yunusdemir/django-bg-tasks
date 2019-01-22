@@ -127,6 +127,16 @@ You can pass a queue name to the ``background`` decorator:
 
 If you run the command ``process_tasks`` with the option ``--queue <queue_name>`` you can restrict the tasks processed to the given queue.
 
+Scheduling the same task twice
+==============================
+
+Normally, when you scheudle the exact same task twice, it will also be executed twice. If you want to remove existing tasks with the same parameters, you can set the parameter `remove_existing_tasks` to `True`:
+
+.. code-block:: python
+
+    @background(remove_existing_tasks=True)
+    def recalculate_data():
+        ...
 
 Running tasks
 =============
