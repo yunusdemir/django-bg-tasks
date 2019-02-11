@@ -16,7 +16,8 @@ from django.utils.six import python_2_unicode_compatible
 
 from background_task.exceptions import InvalidTaskError
 from background_task.settings import app_settings
-from background_task.signals import task_failed, task_rescheduled
+from background_task.signals import task_failed
+from background_task.signals import task_rescheduled
 
 
 logger = logging.getLogger(__name__)
@@ -53,13 +54,14 @@ class TaskManager(models.Manager):
         ready = ready.order_by(_priority_ordering, 'run_at')
 
         if app_settings.BACKGROUND_TASK_RUN_ASYNC:
+            currently_failed = self.failed().count()
             currently_locked = self.locked(now).count()
-            count = app_settings.BACKGROUND_TASK_ASYNC_THREADS - currently_locked
+            count = app_settings.BACKGROUND_TASK_ASYNC_THREADS - \
+                                    (currently_locked - currently_failed)
             if count > 0:
                 ready = ready[:count]
             else:
                 ready = self.none()
-
         return ready
 
     def unlocked(self, now):
@@ -73,8 +75,16 @@ class TaskManager(models.Manager):
         max_run_time = app_settings.BACKGROUND_TASK_MAX_RUN_TIME
         qs = self.get_queryset()
         expires_at = now - timedelta(seconds=max_run_time)
-        locked = Q(locked_by=str(os.getpid())) & Q(locked_at__gt=expires_at)
+        locked = Q(locked_by__isnull=False) | Q(locked_at__gt=expires_at)
         return qs.filter(locked)
+
+    def failed(self):
+        """
+        `currently_locked - currently_failed` in `find_available` assues that
+        tasks marked as failed are also in processing by the running PID.
+        """
+        qs = self.get_queryset()
+        return qs.filter(failed_at__isnull=False)
 
     def new_task(self, task_name, args=None, kwargs=None,
                  run_at=None, priority=0, queue=None, verbose_name=None,
