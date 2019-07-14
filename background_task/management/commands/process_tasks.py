@@ -6,6 +6,7 @@ import time
 
 from django import VERSION
 from django.core.management.base import BaseCommand
+from django.utils import autoreload
 
 from background_task.tasks import tasks, autodiscover
 from background_task.utils import SignalManager
@@ -56,7 +57,11 @@ class Command(BaseCommand):
             'dest': 'log_std',
             'help': 'Redirect stdout and stderr to the logging system',
         }),
-
+        (('--dev', ), {
+            'action': 'store_true',
+            'dest': 'dev',
+            'help': 'Developement server: autoreload files on change as runserver',
+        }),
     )
 
     if VERSION < (1, 8):
@@ -70,14 +75,15 @@ class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
+        self.sig_manager = SignalManager()
         self._tasks = tasks
 
-    def handle(self, *args, **options):
+    def run(self, *args, **options):
         duration = options.pop('duration', 0)
         sleep = options.pop('sleep', 5.0)
         queue = options.pop('queue', None)
         log_std = options.pop('log_std', False)
-        sig_manager = SignalManager()
+        sig_manager = self.sig_manager
 
         if log_std:
             _configure_log_std()
@@ -99,3 +105,13 @@ class Command(BaseCommand):
             else:
                 # there were some tasks to process, let's check if there is more work to do after a little break.
                 time.sleep(random.uniform(sig_manager.time_to_wait[0], sig_manager.time_to_wait[1]))
+
+    def handle(self, *args, **options):
+        dev_server = options.pop('dev', False)
+        if dev_server:
+            reload_func = autoreload.run_with_reloader
+            if VERSION < (2, 2):
+                reload_func = autoreload.main
+            reload_func(self.run, args=args, kwargs=options)
+        else:
+            self.run(*args, **options)
