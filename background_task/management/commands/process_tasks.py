@@ -75,15 +75,20 @@ class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
-        self.sig_manager = SignalManager()
+        self.sig_manager = None
         self._tasks = tasks
 
     def run(self, *args, **options):
-        duration = options.pop('duration', 0)
-        sleep = options.pop('sleep', 5.0)
-        queue = options.pop('queue', None)
-        log_std = options.pop('log_std', False)
+        duration = options.get('duration', 0)
+        sleep = options.get('sleep', 5.0)
+        queue = options.get('queue', None)
+        log_std = options.get('log_std', False)
+        is_dev = options.get('dev', False)
         sig_manager = self.sig_manager
+
+        if is_dev:
+            # raise last Exception is exist
+            autoreload.raise_last_exception()
 
         if log_std:
             _configure_log_std()
@@ -107,11 +112,12 @@ class Command(BaseCommand):
                 time.sleep(random.uniform(sig_manager.time_to_wait[0], sig_manager.time_to_wait[1]))
 
     def handle(self, *args, **options):
-        dev_server = options.pop('dev', False)
-        if dev_server:
+        is_dev = options.get('dev', False)
+        self.sig_manager = SignalManager()
+        if is_dev:
             reload_func = autoreload.run_with_reloader
             if VERSION < (2, 2):
                 reload_func = autoreload.main
-            reload_func(self.run, args=args, kwargs=options)
+            reload_func(self.run, *args, **options)
         else:
             self.run(*args, **options)
