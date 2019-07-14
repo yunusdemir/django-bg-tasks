@@ -60,7 +60,7 @@ class Command(BaseCommand):
         (('--dev', ), {
             'action': 'store_true',
             'dest': 'dev',
-            'help': 'Developement server: autoreload files on change as runserver',
+            'help': 'Auto-reload your code on changes. Use this only for development',
         }),
     )
 
