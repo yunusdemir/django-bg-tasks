@@ -113,6 +113,12 @@ When a repeating task completes successfully, a new Task with an offset of ``rep
 
 ``repeat`` is given in seconds. The following constants are provided: ``Task.NEVER`` (default), ``Task.HOURLY``, ``Task.DAILY``, ``Task.WEEKLY``, ``Task.EVERY_2_WEEKS``, ``Task.EVERY_4_WEEKS``.
 
+If you want to use the repeat constants, you need to import them from this module.
+
+.. code-block:: python
+
+    from background_task.models import Task
+
 The time offset is computed from the initially scheduled time of the original task, not the time the task was actually executed. If the process command is interrupted, the interval between the original task and its repetition may be shorter than ``repeat``.
 
 Multiple Queues
