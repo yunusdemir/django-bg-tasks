@@ -31,13 +31,21 @@ matrix:
     - { python: "3.6", env: TOX_ENV=py36-django20-sync }
     - { python: "3.6", env: TOX_ENV=py36-django21-async }
     - { python: "3.6", env: TOX_ENV=py36-django21-sync }
+    - { python: "3.6", env: TOX_ENV=py36-django30-async }
+    - { python: "3.6", env: TOX_ENV=py36-django30-sync }
 
     # the dist: xenial, sudo: true settings are currently needed to test with python 3.7
     - { python: "3.7", env: TOX_ENV=py37-django20-async, dist: xenial, sudo: true }
     - { python: "3.7", env: TOX_ENV=py37-django20-sync,  dist: xenial, sudo: true }
     - { python: "3.7", env: TOX_ENV=py37-django21-async, dist: xenial, sudo: true }
     - { python: "3.7", env: TOX_ENV=py37-django21-sync, dist: xenial, sudo: true }
-
+    - { python: "3.7", env: TOX_ENV=py37-django30-async, dist: xenial, sudo: true }
+    - { python: "3.7", env: TOX_ENV=py37-django30-sync,  dist: xenial, sudo: true }
+ 
+    # the dist: xenial, sudo: true settings are currently needed to test with python 3.8
+    - { python: "3.8", env: TOX_ENV=py38-django30-async, dist: xenial, sudo: true }
+    - { python: "3.8", env: TOX_ENV=py38-django30-sync,  dist: xenial, sudo: true }
+    
 install: pip install tox-travis coveralls
 
 script: tox -e $TOX_ENV
