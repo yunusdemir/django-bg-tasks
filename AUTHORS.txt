@@ -23,5 +23,7 @@ Contributors
 * Osman A. Osman (oaosman84)
 * David Vogt (winged)
 * Aleksandr Levchuk (alevchuk)
+* Kai-Lun Huang (kaibaooo)
+
 
 Your name could stand here :)
