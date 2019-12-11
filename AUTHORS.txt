@@ -24,6 +24,6 @@ Contributors
 * David Vogt (winged)
 * Aleksandr Levchuk (alevchuk)
 * Kai-Lun Huang (kaibaooo)
-
+* cedricfarinazzo
 
 Your name could stand here :)
