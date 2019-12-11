@@ -21,6 +21,7 @@ Contributors
 * lorddaedra
 * dbreen
 * Osman A. Osman (oaosman84)
-
+* David Vogt (winged)
+* Aleksandr Levchuk (alevchuk)
 
 Your name could stand here :)
