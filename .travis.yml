@@ -4,6 +4,9 @@ language: python
 # this list can be easily checked by running `tox -l`
 matrix:
   include:
+    - { python: "2.7", env: TOX_ENV=py27-django14-async }
+    - { python: "2.7", env: TOX_ENV=py27-django14-sync }
+    
     - { python: "2.7", env: TOX_ENV=py27-django18-async }
     - { python: "2.7", env: TOX_ENV=py27-django18-sync }
     - { python: "2.7", env: TOX_ENV=py27-django111-async }
