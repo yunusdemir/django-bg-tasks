@@ -10,7 +10,7 @@ from django.utils import autoreload
 
 from background_task.tasks import tasks, autodiscover
 from background_task.utils import SignalManager
-from compat import close_connection
+from background_task.compat import close_connection
 
 
 logger = logging.getLogger(__name__)
