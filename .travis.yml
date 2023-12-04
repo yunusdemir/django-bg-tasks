@@ -11,8 +11,8 @@ matrix:
     - { python: "3.9", env: TOX_ENV=py39-django40-async,  dist: xenial, sudo: true }
     - { python: "3.9", env: TOX_ENV=py39-django40-sync,  dist: xenial, sudo: true }
 
-    - { python: "'3.10'", env: TOX_ENV=py310-django40-async,  dist: xenial, sudo: true }
-    - { python: "'3.10'", env: TOX_ENV=py310-django40-sync,  dist: xenial, sudo: true }
+    - { python: "3.10", env: TOX_ENV=py310-django40-async,  dist: xenial, sudo: true }
+    - { python: "3.10", env: TOX_ENV=py310-django40-sync,  dist: xenial, sudo: true }
 
     - { python: "3.11", env: TOX_ENV=py311-django40-async,  dist: xenial, sudo: true }
     - { python: "3.11", env: TOX_ENV=py311-django40-sync,  dist: xenial, sudo: true }
