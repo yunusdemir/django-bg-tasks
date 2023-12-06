@@ -2,5 +2,6 @@ include README.md
 include LICENSE
 include AUTHORS.txt
 include requirements.txt
-include classifiers
+include setup.cfg
+include setup.py
 recursive-include tests *
